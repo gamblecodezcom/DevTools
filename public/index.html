@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffd700">
+<title>GambleCodez // Web Lab</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+:root {
+  --gold: #ffd700;
+  --gold2: #ffaa00;
+  --cyan: #00e5ff;
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a26;
+  --border: #2a2a3a;
+  --text: #e0e0f0;
+  --muted: #6060a0;
+  --red: #ff4466;
+  --green: #00ff88;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+
+/* ── TOP BAR ── */
+#topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; z-index: 100;
+}
+#brand { font-size: 13px; font-weight: 700; color: var(--gold); white-space: nowrap; letter-spacing: 1px; }
+#brand span { color: var(--cyan); }
+#urlbar {
+  flex: 1; min-width: 140px; padding: 7px 10px;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font-size: 13px; outline: none;
+}
+#urlbar:focus { border-color: var(--gold); }
+.btn {
+  padding: 7px 12px; border: none; border-radius: var(--radius);
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: opacity .15s;
+}
+.btn:active { opacity: .7; }
+.btn-gold { background: var(--gold); color: #000; }
+.btn-dark { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.btn-cyan { background: var(--cyan); color: #000; }
+.btn-red  { background: var(--red); color: #fff; }
+.btn-green{ background: var(--green); color: #000; }
+.btn-sm { padding: 5px 9px; font-size: 11px; }
+
+#nav-btns { display: flex; gap: 4px; }
+#scanner-wrap { display: flex; align-items: center; gap: 6px; }
+#scanner-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+#scanner-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── QUICK TARGETS ── */
+#quick-bar {
+  display: flex; gap: 6px; padding: 6px 10px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  overflow-x: auto; flex-wrap: wrap;
+}
+.qtag {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; border: 1px solid transparent;
+}
+.qtag-tg  { background: #1a2a3a; color: #29b6f6; border-color: #29b6f6; }
+.qtag-dc  { background: #1a1a3a; color: #7289da; border-color: #7289da; }
+.qtag-gc  { background: #1a1500; color: var(--gold); border-color: var(--gold); }
+.qtag-gg  { background: #1a1000; color: #ea4335; border-color: #ea4335; }
+.ss-dot   { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; }
+.ss-active{ background: var(--green); }
+.ss-none  { background: var(--muted); }
+
+/* ── INSTALL BANNER ── */
+#install-banner {
+  display: none; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: linear-gradient(90deg, #1a1500, #1a1a00);
+  border-bottom: 1px solid var(--gold2); font-size: 12px;
+}
+#install-banner.show { display: flex; }
+
+/* ── LAYOUT ── */
+#main {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 100px); /* adjust dynamically via JS */
+}
+#view-area {
+  flex: 1; position: relative; background: #fff; overflow: hidden;
+}
+#site-iframe {
+  width: 100%; height: 100%; border: none; display: block;
+}
+#proxy-view {
+  display: none; width: 100%; height: 100%;
+  overflow-y: auto; background: #fff; color: #000;
+  padding: 0;
+}
+#proxy-view iframe { width: 100%; height: 100%; border: none; }
+#view-overlay {
+  display: none; position: absolute; inset: 0;
+  background: var(--bg); align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px; font-size: 14px; color: var(--muted);
+}
+#view-overlay.show { display: flex; }
+#view-status { font-size: 12px; color: var(--cyan); }
+
+/* ── DEV PANEL ── */
+#devpanel {
+  height: 280px; background: var(--bg2);
+  border-top: 2px solid var(--gold); display: flex; flex-direction: column;
+  resize: vertical; overflow: hidden; min-height: 160px;
+}
+#panel-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg3); overflow-x: auto;
+}
+.ptab {
+  padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+  color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.ptab.active { color: var(--gold); border-color: var(--gold); }
+#panel-content { flex: 1; overflow-y: auto; padding: 8px; }
+.pane { display: none; }
+.pane.active { display: block; }
+
+/* ── TABLES ── */
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th { text-align: left; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg2); }
+td { padding: 4px 6px; border-bottom: 1px solid var(--border); word-break: break-all; }
+tr:hover td { background: var(--bg3); }
+.tag { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+.s2xx { background: #003322; color: var(--green); }
+.s3xx { background: #002233; color: var(--cyan); }
+.s4xx { background: #330022; color: #ff88cc; }
+.s5xx { background: #330000; color: var(--red); }
+.s0   { background: #222; color: var(--muted); }
+
+/* ── LOGS ── */
+#log-list { font-size: 11px; font-family: monospace; }
+.log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); }
+.log-claim { color: var(--gold); }
+.log-reward { color: var(--cyan); }
+.log-daily { color: var(--green); }
+.log-bonus { color: #ff88ff; }
+.log-gold  { color: var(--gold2); }
+.log-coins { color: #88ffff; }
+.log-info  { color: var(--muted); }
+
+/* ── SAVED TESTS ── */
+.test-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.test-name { flex: 1; font-size: 12px; color: var(--text); }
+.test-url  { flex: 2; font-size: 10px; color: var(--muted); word-break: break-all; }
+
+/* ── SESSIONS ── */
+.sess-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+.sess-domain { flex: 1; font-size: 12px; }
+.sess-count { font-size: 11px; color: var(--cyan); }
+
+/* ── REDIRECT CHAIN ── */
+.chain-item { font-size: 11px; padding: 2px 0; color: var(--cyan); word-break: break-all; }
+.chain-item:last-child { color: var(--green); font-weight: 700; }
+.chain-arrow { color: var(--muted); }
+
+/* ── FILTER BAR ── */
+.filter-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.filter-input {
+  flex: 1; min-width: 100px; padding: 5px 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-size: 11px;
+}
+
+/* ── REPLAY ── */
+#replay-url   { width: 100%; margin-bottom: 6px; }
+#replay-body  { width: 100%; min-height: 60px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 11px; padding: 6px; font-family: monospace; resize: vertical; }
+#replay-result{ margin-top: 8px; background: var(--bg3); border-radius: var(--radius); padding: 8px; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto; color: var(--green); display: none; }
+</style>
+</head>
+<body>
+
+<!-- INSTALL BANNER -->
+<div id="install-banner">
+  <span>⚡ Install GCZ Web Lab as a home screen app for full standalone mode</span>
+  <button class="btn btn-gold btn-sm" id="install-btn">Install</button>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="brand">GAMBLE<span>CODEZ</span> // WEB LAB</div>
+  <input id="urlbar" type="url" placeholder="https://target-site.com" autocomplete="off" spellcheck="false">
+  <button class="btn btn-gold" onclick="loadSite()">Load</button>
+  <div id="nav-btns">
+    <button class="btn btn-dark" onclick="goBack()" title="Back">◀</button>
+    <button class="btn btn-dark" onclick="goFwd()" title="Forward">▶</button>
+    <button class="btn btn-dark" onclick="reloadSite()" title="Reload">↺</button>
+  </div>
+  <div id="scanner-wrap">
+    <div id="scanner-dot"></div>
+    <button class="btn btn-dark btn-sm" id="scanner-btn" onclick="toggleScanner()">Scanner OFF</button>
+  </div>
+</div>
+
+<!-- QUICK TARGETS -->
+<div id="quick-bar">
+  <span class="qtag qtag-tg" onclick="quickLoad('https://web.telegram.org/k/')">
+    ✈ Telegram<span class="ss-dot ss-none" id="ss-tg"></span>
+  </span>
+  <span class="qtag qtag-dc" onclick="quickLoad('https://discord.com/app')">
+    🎮 Discord<span class="ss-dot ss-none" id="ss-dc"></span>
+  </span>
+  <span class="qtag qtag-gg" onclick="quickLoad('https://accounts.google.com')">
+    G Google Login
+  </span>
+  <span class="qtag qtag-gc" onclick="quickLoad('https://gamble-codez.com')">
+    🎰 gamble-codez.com
+  </span>
+  <span class="qtag qtag-gc" onclick="document.getElementById('urlbar').focus()" style="border-color:var(--muted);color:var(--muted)">
+    + Custom URL
+  </span>
+</div>
+
+<!-- MAIN VIEW -->
+<div id="main">
+  <div id="view-area">
+    <iframe id="site-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation" allowfullscreen></iframe>
+    <div id="proxy-view"></div>
+    <div id="view-overlay" class="show">
+      <div style="font-size:28px">🎰</div>
+      <div style="color:var(--gold);font-weight:700">GambleCodez // Web Lab</div>
+      <div>Enter a URL above or pick a Quick Target</div>
+      <div id="view-status"></div>
+    </div>
+  </div>
+
+  <!-- DEV PANEL -->
+  <div id="devpanel">
+    <div id="panel-tabs">
+      <div class="ptab active" onclick="showTab('network')">Network</div>
+      <div class="ptab" onclick="showTab('redirects')">Redirects</div>
+      <div class="ptab" onclick="showTab('actions')">Actions</div>
+      <div class="ptab" onclick="showTab('sessions')">Sessions</div>
+      <div class="ptab" onclick="showTab('saved')">Saved Tests</div>
+      <div class="ptab" onclick="showTab('logs')">Logs</div>
+    </div>
+    <div id="panel-content">
+
+      <!-- NETWORK -->
+      <div class="pane active" id="pane-network">
+        <div class="filter-row">
+          <input class="filter-input" id="net-filter" placeholder="Filter: claim, reward, daily, bonus, api…" oninput="refreshNetwork()">
+          <button class="btn btn-dark btn-sm" onclick="refreshNetwork()">↻</button>
+          <button class="btn btn-red btn-sm" onclick="clearNetwork()">Clear</button>
+        </div>
+        <table id="net-table">
+          <thead><tr><th>Method</th><th>URL</th><th>Status</th><th>Duration</th><th>Time</th></tr></thead>
+          <tbody id="net-body"></tbody>
+        </table>
+      </div>
+
+      <!-- REDIRECTS -->
+      <div class="pane" id="pane-redirects">
+        <div class="filter-row">
+          <button class="btn btn-dark btn-sm" onclick="refreshRedirects()">↻</button>
+          <button class="btn btn-red btn-sm" onclick="clearRedirects()">Clear</button>
+        </div>
+        <div id="redirect-list"></div>
+      </div>
+
+      <!-- ACTIONS / REPLAY -->
+      <div class="pane" id="pane-actions">
+        <div style="margin-bottom:8px;font-size:12px;color:var(--muted)">Request Replay — uses saved session cookies for the target domain</div>
+        <div class="filter-row">
+          <input class="filter-input" id="replay-url" type="url" placeholder="https://target.com/api/claim">
+          <select id="replay-method" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:11px;">
+            <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+          </select>
+        </div>
+        <textarea id="replay-body" placeholder='{"key":"value"}  — optional JSON body'></textarea>
+        <div class="filter-row" style="margin-top:6px">
+          <button class="btn btn-gold" onclick="runReplay()">▶ Run Request</button>
+          <button class="btn btn-cyan btn-sm" onclick="saveCurrentAsTest()">💾 Save Test</button>
+          <button class="btn btn-dark btn-sm" onclick="openInNew()">↗ Open in Tab</button>
+        </div>
+        <pre id="replay-result"></pre>
+      </div>
+
+      <!-- SESSIONS -->
+      <div class="pane" id="pane-sessions">
+        <div class="filter-row">
+          <button class="btn btn-dark btn-sm" onclick="refreshSessions()">↻ Refresh</button>
+          <button class="btn btn-red btn-sm" onclick="clearAllSessions()">🗑 Clear All</button>
+        </div>
+        <div id="session-list"></div>
+      </div>
+
+      <!-- SAVED TESTS -->
+      <div class="pane" id="pane-saved">
+        <div class="filter-row">
+          <button class="btn btn-dark btn-sm" onclick="refreshSavedTests()">↻</button>
+        </div>
+        <div id="saved-tests-list"></div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="pane" id="pane-logs">
+        <div class="filter-row">
+          <button class="btn btn-dark btn-sm" onclick="document.getElementById('log-list').innerHTML=''">Clear</button>
+        </div>
+        <div id="log-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentUrl = '';
+let scannerOn = false;
+let useProxy = false;
+let deferredInstall = null;
+const iframe = document.getElementById('site-iframe');
+const proxyView = document.getElementById('proxy-view');
+const overlay = document.getElementById('view-overlay');
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+// ── INSTALL BANNER ────────────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').onclick = () => {
+  if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; }
+  document.getElementById('install-banner').classList.remove('show');
+};
+
+// ── URL BAR ───────────────────────────────────────────────────────────────────
+document.getElementById('urlbar').addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadSite();
+});
+
+function normalizeUrl(url) {
+  url = url.trim();
+  if (!url) return '';
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  return url;
+}
+
+// ── LOAD SITE ─────────────────────────────────────────────────────────────────
+async function loadSite(url) {
+  url = url || document.getElementById('urlbar').value;
+  url = normalizeUrl(url);
+  if (!url) return;
+  document.getElementById('urlbar').value = url;
+  currentUrl = url;
+  setStatus('Checking iframe compatibility…');
+
+  try {
+    const check = await fetch(`/api/iframe-check?url=${encodeURIComponent(url)}`).then(r=>r.json());
+    if (!check.blocked) {
+      loadInIframe(url);
+    } else {
+      setStatus('iframe blocked — loading via proxy…');
+      loadViaProxy(url);
+    }
+  } catch {
+    loadInIframe(url);
+  }
+  refreshSessionStatus();
+  if (scannerOn) logEvent('info', `Loaded: ${url}`);
+}
+
+function quickLoad(url) {
+  document.getElementById('urlbar').value = url;
+  loadSite(url);
+}
+
+function loadInIframe(url) {
+  useProxy = false;
+  iframe.src = url;
+  iframe.style.display = 'block';
+  proxyView.style.display = 'none';
+  overlay.classList.remove('show');
+  setStatus('');
+}
+
+async function loadViaProxy(url) {
+  useProxy = true;
+  iframe.style.display = 'none';
+  proxyView.style.display = 'block';
+  overlay.classList.remove('show');
+  setStatus('Loading via proxy…');
+  try {
+    const res = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+    const html = await res.text();
+    const finalUrl = res.headers.get('x-final-url') || url;
+    proxyView.innerHTML = `<iframe srcdoc="${escapeAttr(html)}" style="width:100%;height:100%;border:none;"></iframe>`;
+    setStatus(`Proxied: ${finalUrl}`);
+    if (scannerOn) logEvent('info', `Proxy loaded: ${finalUrl}`);
+  } catch (err) {
+    proxyView.innerHTML = `<div style="padding:20px;color:red">Proxy error: ${err.message}</div>`;
+    setStatus('Proxy error');
+  }
+}
+
+function escapeAttr(s) {
+  return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function goBack()   { try { iframe.contentWindow.history.back(); } catch {} }
+function goFwd()    { try { iframe.contentWindow.history.forward(); } catch {} }
+function reloadSite() { if (currentUrl) loadSite(currentUrl); }
+
+// ── SCANNER ───────────────────────────────────────────────────────────────────
+async function toggleScanner() {
+  scannerOn = !scannerOn;
+  await fetch('/api/scanner', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ active: scannerOn })
+  });
+  updateScannerUI();
+}
+function updateScannerUI() {
+  const dot = document.getElementById('scanner-dot');
+  const btn = document.getElementById('scanner-btn');
+  if (scannerOn) { dot.className = 'on'; btn.textContent = 'Scanner ON'; btn.style.color = '#00ff88'; }
+  else { dot.className = ''; btn.textContent = 'Scanner OFF'; btn.style.color = ''; }
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+function setStatus(msg) { document.getElementById('view-status').textContent = msg; }
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.ptab').forEach((t,i) => {
+    const panes = ['network','redirects','actions','sessions','saved','logs'];
+    t.classList.toggle('active', t.onclick.toString().includes(name));
+  });
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  if (name === 'network') refreshNetwork();
+  if (name === 'redirects') refreshRedirects();
+  if (name === 'sessions') refreshSessions();
+  if (name === 'saved') refreshSavedTests();
+}
+
+// ── NETWORK ───────────────────────────────────────────────────────────────────
+async function refreshNetwork() {
+  const f = document.getElementById('net-filter').value;
+  const data = await fetch(`/api/network${f?'?filter='+encodeURIComponent(f):''}`).then(r=>r.json()).catch(()=>[]);
+  const tbody = document.getElementById('net-body');
+  tbody.innerHTML = data.map(e => {
+    const sc = e.status >= 500 ? 's5xx' : e.status >= 400 ? 's4xx' : e.status >= 300 ? 's3xx' : e.status >= 200 ? 's2xx' : 's0';
+    return `<tr onclick="useForReplay('${escAttr(e.url)}','${e.method||'GET'}')">
+      <td><span class="tag ${sc}">${e.method||'GET'}</span></td>
+      <td title="${escAttr(e.url)}">${e.url.slice(0,60)}${e.url.length>60?'…':''}</td>
+      <td><span class="tag ${sc}">${e.status||'?'}</span></td>
+      <td>${e.duration||0}ms</td>
+      <td>${new Date(e.timestamp).toLocaleTimeString()}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:12px">No requests yet — enable Scanner and load a site</td></tr>';
+}
+async function clearNetwork() {
+  await fetch('/api/network', { method: 'DELETE' });
+  refreshNetwork();
+}
+
+// ── REDIRECTS ─────────────────────────────────────────────────────────────────
+async function refreshRedirects() {
+  const data = await fetch('/api/redirects').then(r=>r.json()).catch(()=>[]);
+  const el = document.getElementById('redirect-list');
+  el.innerHTML = data.map(r => `
+    <div style="margin-bottom:10px;padding:6px;background:var(--bg3);border-radius:6px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${new Date(r.timestamp).toLocaleString()} — ${r.domain}</div>
+      ${r.chain.map((url, i) => `<div class="chain-item">${i > 0 ? '<span class="chain-arrow">→ </span>' : ''}${url}</div>`).join('')}
+      <div style="margin-top:4px;display:flex;gap:6px">
+        <button class="btn btn-cyan btn-sm" onclick="useForReplay('${escAttr(r.finalUrl)}','GET')">↻ Replay</button>
+        <button class="btn btn-dark btn-sm" onclick="quickLoad('${escAttr(r.finalUrl)}')">↗ Open</button>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);padding:12px;text-align:center">No redirects captured yet</div>';
+}
+async function clearRedirects() {
+  await fetch('/api/redirects', { method: 'DELETE' });
+  refreshRedirects();
+}
+
+// ── REPLAY ────────────────────────────────────────────────────────────────────
+function useForReplay(url, method) {
+  document.getElementById('replay-url').value = url;
+  document.getElementById('replay-method').value = method || 'GET';
+  showTab('actions');
+}
+async function runReplay() {
+  const url = document.getElementById('replay-url').value.trim();
+  const method = document.getElementById('replay-method').value;
+  const body = document.getElementById('replay-body').value.trim();
+  if (!url) return;
+  const result = document.getElementById('replay-result');
+  result.style.display = 'block';
+  result.textContent = 'Running…';
+  try {
+    const payload = { url, method };
+    if (body) payload.body = body;
+    const res = await fetch('/api/test/request', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    result.textContent = JSON.stringify(data, null, 2);
+    logEvent('info', `Replay ${method} ${url} → ${data.status}`);
+  } catch (err) {
+    result.textContent = 'Error: ' + err.message;
+  }
+}
+function openInNew() {
+  const url = document.getElementById('replay-url').value.trim();
+  if (url) window.open(url, '_blank');
+}
+async function saveCurrentAsTest() {
+  const url = document.getElementById('replay-url').value.trim();
+  const method = document.getElementById('replay-method').value;
+  if (!url) return;
+  const name = prompt('Test name (e.g. "Daily Claim"):', '');
+  if (!name) return;
+  await fetch('/api/test/saved', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name, url, method })
+  });
+  logEvent('info', `Saved test: ${name}`);
+  refreshSavedTests();
+}
+
+// ── SESSIONS ─────────────────────────────────────────────────────────────────
+async function refreshSessions() {
+  const data = await fetch('/api/sessions').then(r=>r.json()).catch(()=>({}));
+  const el = document.getElementById('session-list');
+  const entries = Object.entries(data);
+  if (!entries.length) {
+    el.innerHTML = '<div style="color:var(--muted);padding:12px;text-align:center">No sessions stored — log in to a site to save cookies</div>';
+    return;
+  }
+  el.innerHTML = entries.map(([domain, info]) => `
+    <div class="sess-row">
+      <span class="sess-domain">${domain}</span>
+      <span class="sess-count">${info.count} cookie${info.count!==1?'s':''}</span>
+      <button class="btn btn-dark btn-sm" onclick="clearSession('${domain}')">🗑</button>
+    </div>
+  `).join('');
+}
+async function clearSession(domain) {
+  await fetch(`/api/sessions/${encodeURIComponent(domain)}`, { method: 'DELETE' });
+  refreshSessions();
+  refreshSessionStatus();
+}
+async function clearAllSessions() {
+  if (!confirm('Clear ALL saved sessions?')) return;
+  await fetch('/api/sessions', { method: 'DELETE' });
+  refreshSessions();
+  refreshSessionStatus();
+}
+async function refreshSessionStatus() {
+  const data = await fetch('/api/session-status').then(r=>r.json()).catch(()=>({telegram:false,discord:false}));
+  const tg = document.getElementById('ss-tg');
+  const dc = document.getElementById('ss-dc');
+  if (tg) { tg.className = 'ss-dot ' + (data.telegram ? 'ss-active' : 'ss-none'); }
+  if (dc) { dc.className = 'ss-dot ' + (data.discord ? 'ss-active' : 'ss-none'); }
+}
+
+// ── SAVED TESTS ───────────────────────────────────────────────────────────────
+async function refreshSavedTests() {
+  const data = await fetch('/api/test/saved').then(r=>r.json()).catch(()=>[]);
+  const el = document.getElementById('saved-tests-list');
+  if (!data.length) {
+    el.innerHTML = '<div style="color:var(--muted);padding:12px;text-align:center">No saved tests — use Actions tab to save a request</div>';
+    return;
+  }
+  el.innerHTML = data.map(t => `
+    <div class="test-row">
+      <span class="test-name">${t.name}</span>
+      <span class="test-url">${t.method} ${t.url}</span>
+      <button class="btn btn-gold btn-sm" onclick="runSavedTest('${t.id}','${escAttr(t.url)}','${t.method}')">▶ Run</button>
+      <button class="btn btn-dark btn-sm" onclick="copyText('${escAttr(t.url)}')">Copy</button>
+      <button class="btn btn-red btn-sm" onclick="deleteSavedTest('${t.id}')">✕</button>
+    </div>
+  `).join('');
+}
+async function runSavedTest(id, url, method) {
+  useForReplay(url, method);
+  await runReplay();
+}
+async function deleteSavedTest(id) {
+  await fetch(`/api/test/saved/${id}`, { method: 'DELETE' });
+  refreshSavedTests();
+}
+
+// ── LOGS ─────────────────────────────────────────────────────────────────────
+const CLICK_KEYWORDS = ['claim','reward','daily','bonus','gold','coins','free','spin','prize'];
+function logEvent(type, msg) {
+  const list = document.getElementById('log-list');
+  const ts = new Date().toLocaleTimeString();
+  const kw = CLICK_KEYWORDS.find(k => msg.toLowerCase().includes(k));
+  const cls = kw ? `log-${kw}` : `log-${type}`;
+  list.insertAdjacentHTML('afterbegin', `<div class="log-entry ${cls}">[${ts}] ${msg}</div>`);
+}
+
+// intercept console from iframe
+try {
+  iframe.addEventListener('load', () => {
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      // inject click logger into iframe
+      const script = doc.createElement('script');
+      script.textContent = `
+        document.addEventListener('click', e => {
+          const t = e.target;
+          const text = (t.innerText||t.value||t.getAttribute('aria-label')||'').toLowerCase();
+          const keywords = ['claim','reward','daily','bonus','gold','coins','free','spin','prize'];
+          const hit = keywords.find(k => text.includes(k));
+          if (hit) {
+            fetch('/api/log-click', {method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({keyword:hit,text:t.innerText||t.value,url:location.href})
+            }).catch(()=>{});
+          }
+        }, true);
+      `;
+      doc.head.appendChild(script);
+    } catch {}
+  });
+} catch {}
+
+// ── CLICK LOG ENDPOINT ────────────────────────────────────────────────────────
+// handled server-side, but we also show in UI via polling
+// (server.js exposes /api/log-click which we add below via fetch intercept)
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function escAttr(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
+function copyText(t) { navigator.clipboard.writeText(t).then(()=>logEvent('info','Copied: '+t)); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+refreshSessionStatus();
+setInterval(refreshSessionStatus, 15000);
+fetch('/api/scanner').then(r=>r.json()).then(d=>{ scannerOn=d.active; updateScannerUI(); }).catch(()=>{});
+</script>
+</body>
+</html>

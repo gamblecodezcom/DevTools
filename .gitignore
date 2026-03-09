@@ -1,0 +1,6 @@
+node_modules/
+data/sessions.json
+data/network.json
+data/redirects.json
+.claude-tmp/
+*.log
