@@ -16,7 +16,7 @@ mkdir -p "$HOME/.claude-tmp"
 # Install deps if needed
 if [ ! -d "node_modules" ]; then
   echo "📦 Installing dependencies..."
-  npm install
+  npm install --no-bin-links
 fi
 
 echo ""
