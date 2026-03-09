@@ -1,6 +1,34 @@
+# Dependencies
 node_modules/
+
+# Environment & secrets
+.env
+.env.*
+*.env
+
+# Data — sensitive runtime files (sessions, tokens, auth, keys)
 data/sessions.json
+data/share-tokens.json
+data/admin-config.json
+data/claude-config.json
+data/tg-auth.json
+data/chat-history.json
 data/network.json
 data/redirects.json
-.claude-tmp/
+data/*.log
+
+# Logs
 *.log
+logs/
+
+# Temp / OS junk
+.claude-tmp/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+*.bak
+
+# Editor
+.vscode/
+.idea/
