@@ -1,6 +1,17 @@
 #!/usr/bin/env node
 'use strict';
 
+// ─── Load .env (no dotenv dep) ───────────────────────────────────────────────
+{
+  const _fs = require('fs'), _path = require('path');
+  const _ef = _path.join(__dirname, '.env');
+  if (_fs.existsSync(_ef)) {
+    _fs.readFileSync(_ef, 'utf8').split('\n').forEach(line => {
+      const m = line.match(/^([^#=\s][^=]*)=(.*)$/);
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+    });
+  }
+}
 
 const express      = require('express');
 const session      = require('express-session');
@@ -71,7 +82,11 @@ function saveAdminConfig(cfg) { fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringi
 function ensureAdminConfig() {
   const cfg = loadAdminConfig();
   let changed = false;
-  if (!cfg.adminToken)     { cfg.adminToken     = crypto.randomBytes(24).toString('hex'); changed = true; }
+  if (process.env.ADMIN_TOKEN) {
+    cfg.adminToken = process.env.ADMIN_TOKEN;
+  } else if (!cfg.adminToken) {
+    cfg.adminToken = crypto.randomBytes(24).toString('hex'); changed = true;
+  }
   if (!cfg.sessionSecret)  { cfg.sessionSecret  = crypto.randomBytes(32).toString('hex'); changed = true; }
   if (changed) saveAdminConfig(cfg);
   return cfg;
@@ -572,8 +587,22 @@ app.get('/api/iframe-check', async (req, res) => {
 
 // ─── Claude config (legacy API key storage) ───────────────────────────────────
 const CLAUDE_CONFIG_FILE = path.join(DATA_DIR, 'claude-config.json');
-function loadClaudeConfig()    { try { return JSON.parse(fs.readFileSync(CLAUDE_CONFIG_FILE, 'utf8')); } catch { return {}; } }
-function saveClaudeConfig(cfg) { fs.writeFileSync(CLAUDE_CONFIG_FILE, JSON.stringify(cfg, null, 2)); }
+function loadClaudeConfig() {
+  let cfg = {};
+  try { cfg = JSON.parse(fs.readFileSync(CLAUDE_CONFIG_FILE, 'utf8')); } catch {}
+  // Merge secrets from env — never stored on disk
+  if (process.env.TG_BOT_TOKEN)      cfg.tgBotToken    = process.env.TG_BOT_TOKEN;
+  if (process.env.TG_BOT_USERNAME)   cfg.tgBotUsername = process.env.TG_BOT_USERNAME;
+  if (process.env.BRIDGE_TOKEN)      cfg.bridgeToken   = process.env.BRIDGE_TOKEN;
+  if (process.env.ANTHROPIC_API_KEY) cfg.apiKey        = process.env.ANTHROPIC_API_KEY;
+  return cfg;
+}
+function saveClaudeConfig(cfg) {
+  // Strip secrets before writing to disk
+  const safe = { ...cfg };
+  delete safe.tgBotToken; delete safe.bridgeToken; delete safe.apiKey;
+  fs.writeFileSync(CLAUDE_CONFIG_FILE, JSON.stringify(safe, null, 2));
+}
 
 // ─── Claude CLI call ──────────────────────────────────────────────────────────
 function callViaCLI(prompt) {

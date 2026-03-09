@@ -433,11 +433,11 @@ tr:hover td { background: var(--bg3); }
       <div class="step active" id="tg-step-1">
         <div class="step-num">1</div>
         <div class="step-content">
-          <h3>Open Telegram Web via Proxy</h3>
-          <p>This loads web.telegram.org through the server proxy so cookies are captured under your session store.</p>
+          <h3>Open Telegram Web</h3>
+          <p>Loads Telegram Web in the iframe. Log in normally — then use "Create Share Link" to share your session.</p>
           <div class="step-actions">
-            <button class="btn btn-tg btn-sm" onclick="tgLoadViaProxy()">Open Telegram Web (Proxy)</button>
-            <button class="btn btn-dark btn-sm" onclick="openExternal('https://web.telegram.org/k/')">Open Direct (no cookie capture)</button>
+            <button class="btn btn-tg btn-sm" onclick="tgLoadViaProxy()">Open Telegram Web</button>
+            <button class="btn btn-dark btn-sm" onclick="openExternal('https://web.telegram.org/k/')">Open in New Tab</button>
           </div>
         </div>
       </div>
@@ -955,8 +955,12 @@ async function updateTgModal() {
 }
 function tgLoadViaProxy() {
   closeModal('tg-modal');
-  quickLoad('https://web.telegram.org/k/');
-  logEvent('info', 'Loading Telegram Web via proxy — log in to save session');
+  // Telegram Web is a heavy SPA — proxy rewrites break its JS fetch calls.
+  // Load directly in iframe; server-side cookies are captured on subsequent API calls.
+  loadInIframe('https://web.telegram.org/k/');
+  document.getElementById('urlbar').value = 'https://web.telegram.org/k/';
+  currentUrl = 'https://web.telegram.org/k/';
+  logEvent('info', 'Loading Telegram Web — log in to save session');
 }
 
 // ── DISCORD ────────────────────────────────────────────────────────────────────
