@@ -30,12 +30,12 @@ if [ -f "$DATA/redirects.json" ]; then
   " 2>/dev/null
 fi
 
-# Trim text logs to last 500 lines each
+# Trim text logs — only if > 1000 lines (low-CPU VPS: skip if small)
 for logfile in "$DATA/weblab.log" "$DATA/weblab-error.log"; do
   if [ -f "$logfile" ]; then
     lines=$(wc -l < "$logfile" 2>/dev/null || echo 0)
-    if [ "$lines" -gt 500 ]; then
-      tail -500 "$logfile" > "$logfile.tmp" && mv "$logfile.tmp" "$logfile"
+    if [ "$lines" -gt 1000 ]; then
+      tail -1000 "$logfile" > "$logfile.tmp" && mv "$logfile.tmp" "$logfile"
     fi
   fi
 done

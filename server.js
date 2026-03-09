@@ -22,7 +22,7 @@ const fs           = require('fs');
 const path         = require('path');
 const zlib         = require('zlib');
 const fetch        = require('node-fetch');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 
 const app  = express();
 const PORT = parseInt(process.env.PORT || '3002', 10);
@@ -73,6 +73,28 @@ const CONTEXT_MSGS  = 20;
 try { chatHistory = JSON.parse(fs.readFileSync(CHAT_HISTORY_FILE, 'utf8')); } catch { chatHistory = []; }
 function saveChatHistory() {
   try { fs.writeFileSync(CHAT_HISTORY_FILE, JSON.stringify(chatHistory.slice(-HISTORY_MAX), null, 2)); } catch {}
+}
+
+// ─── Active SSE streams (message turn → Claude subprocess) ────────────────────
+const activeStreams = new Map();
+// {child, sseRes, buffered:[], done:false, message, dangerousMode, fullText}
+
+// ─── Claude session ID (for --resume compaction) ──────────────────────────────
+let claudeSessionId = null;
+{
+  try {
+    const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'claude-config.json'), 'utf8'));
+    if (cfg.cliSessionId) claudeSessionId = cfg.cliSessionId;
+  } catch {}
+}
+function saveClaudeSessionId(id) {
+  claudeSessionId = id;
+  try {
+    const f = path.join(__dirname, 'data', 'claude-config.json');
+    const cfg = JSON.parse(fs.readFileSync(f, 'utf8'));
+    cfg.cliSessionId = id;
+    fs.writeFileSync(f, JSON.stringify(cfg, null, 2));
+  } catch {}
 }
 
 // ─── Telegram auth store ──────────────────────────────────────────────────────
@@ -666,10 +688,11 @@ function callViaCLI(prompt) {
     delete env.CLAUDECODE;
     delete env.CLAUDE_CODE_SESSION;
 
+    delete env.CLAUDE_CODE_ENTRYPOINT;
     const child = execFile(
       CLI_BIN,
-      ['--print', '--no-markdown', '-p', prompt],
-      { timeout: 90_000, maxBuffer: 8 * 1024 * 1024, env },
+      ['--print', '-p', prompt, '--model', 'claude-sonnet-4-6'],
+      { timeout: 180_000, maxBuffer: 8 * 1024 * 1024, env },
       (err, stdout, stderr) => {
         if (err) return reject(new Error(stderr || err.message));
         resolve(stdout.trim());
@@ -738,86 +761,209 @@ app.get('/api/claude/bridge-status', (req, res) => {
   res.json({ connected: !!CLI_BIN, source: CLI_BIN ? 'claude-cli-pro' : 'none', model: 'claude-sonnet-4-6' });
 });
 
-// ─── API: Claude chat ─────────────────────────────────────────────────────────
+// ─── API: Claude chat (SSE streaming) ────────────────────────────────────────
+// POST → {streamId}  then  GET /api/claude/stream/:id → SSE
 app.post('/api/claude/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, dangerousMode, planMode } = req.body;
   if (!message) return res.status(400).json({ error: 'message required' });
-  if (!claudeActive) return res.status(503).json({ error: 'Claude is deactivated. Enable it in the Chat panel.' });
+  if (!claudeActive) return res.status(503).json({ error: 'Claude is deactivated.' });
 
-  const sessionSummary = Object.keys(cookieStore).map(d => `${d} (${cookieStore[d].length} cookies)`).join(', ') || 'none';
-  const tgUser = tgAuthData ? `${tgAuthData.first_name} (@${tgAuthData.username || tgAuthData.id})` : 'not logged in';
-
-  const systemPrompt = `You are Claude, embedded in the GambleCodez DevTools — a private developer testing console at ${BASE}.
-
-You are running on the VPS as Claude Code Pro (claude-cli) with full tool access.
-
-Current context:
-- Saved browser sessions: ${sessionSummary}
-- Telegram user: ${tgUser}
-- DevTools API (localhost): http://127.0.0.1:${PORT}
-
-Available API calls you can instruct or execute:
-- Test HTTP endpoint (with cookies): POST /api/test/request {url, method, headers, body}
-- Create share link: POST /api/share/create {domain, targetUrl, label, ttlMinutes, maxUses}
-- List sessions: GET /api/sessions
-- Check session status: GET /api/session-status
-
-To test a bot endpoint with the user's session:
-  curl -s -X POST http://127.0.0.1:${PORT}/api/test/request \\
-    -H 'Content-Type: application/json' \\
-    -d '{"url":"https://example.com/api/test","method":"GET"}'
-
-You help the developer test websites, Discord bots, Telegram bots, OAuth flows, redirect chains, daily reward flows.
-Be concise, technical, and direct. You maintain conversation memory.`;
-
-  const apiMessages = [
-    ...chatHistory.slice(-CONTEXT_MSGS).map(h => ({ role: h.role, content: h.content })),
-    { role: 'user', content: message.trim() },
-  ];
-
-  let reply   = '';
-  let authUsed = '';
-
-  try {
-    if (CLI_BIN) {
-      const historyBlock = chatHistory.slice(-CONTEXT_MSGS)
-        .map(h => `${h.role === 'user' ? 'Human' : 'Assistant'}: ${h.content}`)
-        .join('\n\n');
-      const cliPrompt = `${systemPrompt}\n\n${historyBlock ? historyBlock + '\n\n' : ''}Human: ${message.trim()}\n\nAssistant:`;
-      reply    = await callViaCLI(cliPrompt);
-      authUsed = 'claude-cli-pro';
-    } else {
-      reply    = await callViaApiKey(systemPrompt, apiMessages);
-      authUsed = 'api-key';
-    }
-  } catch (cliErr) {
-    // CLI failed — try API key fallback
-    audit('claude.cli_error', { error: cliErr.message });
-    const cfg    = loadClaudeConfig();
-    const hasKey = !!(cfg.apiKey || process.env.ANTHROPIC_API_KEY);
-    if (hasKey) {
-      try {
-        reply    = await callViaApiKey(systemPrompt, apiMessages);
-        authUsed = 'api-key-fallback';
-      } catch (apiErr) {
-        audit('claude.api_error', { error: apiErr.message });
-        return res.status(502).json({ error: apiErr.message });
-      }
-    } else {
-      return res.status(502).json({ error: `Claude CLI failed: ${cliErr.message}. Configure API key as fallback.` });
-    }
-  }
-
+  const streamId = crypto.randomBytes(12).toString('hex');
   const ts = new Date().toISOString();
-  chatHistory.push({ role: 'user',      content: message.trim(), ts });
-  chatHistory.push({ role: 'assistant', content: reply,          ts });
+
+  // Save user message immediately
+  chatHistory.push({ role: 'user', content: message.trim(), ts });
   saveChatHistory();
+  claudeLog('user', message.trim(), { streamId });
 
-  claudeLog('user',      message.trim(), { authMode: authUsed });
-  claudeLog('assistant', reply,          { authMode: authUsed, historyCount: chatHistory.length });
-  audit('claude.chat', { authMode: authUsed, msgLen: message.length, replyLen: reply.length, historyCount: chatHistory.length });
+  if (CLI_BIN) {
+    // ── CLI path: real streaming subprocess ──────────────────────────────────
+    const env = { ...process.env };
+    // Remove all Claude session env vars to allow subprocess calls
+    delete env.CLAUDECODE;
+    delete env.CLAUDE_CODE_SESSION;
+    delete env.CLAUDE_CODE_ENTRYPOINT;
 
-  res.json({ reply, authMode: authUsed, historyCount: chatHistory.length });
+    // Context preamble only on first message (no session yet)
+    const sessionSummary = Object.keys(cookieStore).map(d => `${d} (${cookieStore[d].length} cookies)`).join(', ') || 'none';
+    const tgUser = tgAuthData ? `${tgAuthData.first_name} (@${tgAuthData.username || tgAuthData.id})` : 'not logged in';
+    const preamble = !claudeSessionId
+      ? `[DevTools context — sessions:${sessionSummary}, tgUser:${tgUser}, api:http://127.0.0.1:${PORT}]\n\n`
+      : '';
+
+    // --dangerously-skip-permissions is blocked as root; use --permission-mode instead
+    const permMode = dangerousMode ? 'bypassPermissions' : 'default';
+
+    const args = [
+      '--output-format', 'stream-json',
+      '--verbose',                        // required by stream-json
+      '--model', 'claude-sonnet-4-6',
+      '--permission-mode', permMode,
+    ];
+    if (planMode) args.push('--permission-mode', 'plan'); // overrides permMode
+    if (claudeSessionId) args.push('--resume', claudeSessionId);
+    args.push('-p', preamble + message.trim());
+
+    const child = spawn(CLI_BIN, args, { env, cwd: path.join(__dirname), stdio: ['pipe', 'pipe', 'pipe'] });
+
+    const s = { child, sseRes: null, buffered: [], done: false,
+      message: message.trim(), dangerousMode: !!dangerousMode, fullText: '' };
+    activeStreams.set(streamId, s);
+
+    // Wire up ALL child events here (so nothing is lost before SSE connects)
+    let buf = '';
+    child.stdout.on('data', chunk => {
+      buf += chunk.toString();
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        let ev;
+        try { ev = JSON.parse(line); } catch { continue; }
+        if (ev.session_id && ev.session_id !== claudeSessionId) saveClaudeSessionId(ev.session_id);
+        if (ev.type === 'assistant') {
+          const content = ev.message?.content || [];
+          for (const c of content) {
+            if (c.type === 'text')     { s.fullText += c.text; _sseEmit(s, 'text', { text: c.text }); }
+            else if (c.type === 'tool_use') _sseEmit(s, 'tool_use', { id: c.id, name: c.name, input: c.input });
+          }
+        } else if (ev.type === 'tool_result') {
+          _sseEmit(s, 'tool_result', { tool_use_id: ev.tool_use_id, content: String(ev.content || '').slice(0, 500) });
+        } else if (ev.type === 'system') {
+          if (ev.subtype === 'init')
+            _sseEmit(s, 'init', { sessionId: ev.session_id, model: ev.model, tools: ev.tools, permissionMode: ev.permissionMode });
+          else if (ev.subtype === 'permission_request') {
+            _sseEmit(s, 'permission', { id: ev.tool_use_id, tool: ev.tool });
+            audit('claude.permission_request', { tool: ev.tool?.name, streamId });
+          }
+        } else if (ev.type === 'result') {
+          const finalText = ev.result || s.fullText;
+          _sseEmit(s, 'result', { subtype: ev.subtype, result: finalText, cost: ev.total_cost_usd });
+          s.done = true;
+          chatHistory.push({ role: 'assistant', content: finalText, ts: new Date().toISOString() });
+          saveChatHistory();
+          claudeLog('assistant', finalText, { authMode: 'claude-cli-pro', streamId });
+          audit('claude.chat', { authMode: 'claude-cli-pro', replyLen: finalText.length, cost: ev.total_cost_usd });
+        }
+      }
+    });
+    child.stderr.on('data', chunk => {
+      const text = chunk.toString().trim();
+      if (text) { _sseEmit(s, 'stderr', { text }); audit('claude.stderr', { text: text.slice(0, 200) }); }
+    });
+    child.on('error', err => {
+      _sseEmit(s, 'error', { message: err.message }); s.done = true;
+      audit('claude.cli_error', { error: err.message, streamId });
+    });
+    child.on('close', (code, signal) => {
+      _sseEmit(s, 'close', { code, signal });
+      if (s.sseRes && !s.sseRes.writableEnded) s.sseRes.end();
+      // Keep stream for 30s so late SSE connections can flush buffered events
+      setTimeout(() => activeStreams.delete(streamId), 30_000);
+    });
+
+    audit('claude.chat_start', { streamId, dangerousMode: !!dangerousMode, planMode: !!planMode, hasSession: !!claudeSessionId });
+    res.json({ streamId, mode: 'stream' });
+
+  } else {
+    // ── API key fallback: non-streaming, fake stream ──────────────────────────
+    const cfg = loadClaudeConfig();
+    const hasKey = !!(cfg.apiKey || process.env.ANTHROPIC_API_KEY);
+    if (!hasKey) return res.status(503).json({ error: 'No Claude CLI found and no API key configured.' });
+
+    activeStreams.set(streamId, { child: null, sseRes: null, buffered: [], done: false,
+      message: message.trim(), dangerousMode: false, fullText: '' });
+
+    const sessionSummary = Object.keys(cookieStore).map(d => `${d} (${cookieStore[d].length} cookies)`).join(', ') || 'none';
+    const tgUser = tgAuthData ? `${tgAuthData.first_name} (@${tgAuthData.username || tgAuthData.id})` : 'not logged in';
+    const systemPrompt = `You are Claude, embedded in GambleCodez DevTools at ${BASE}. Sessions:${sessionSummary}. TG:${tgUser}. API:http://127.0.0.1:${PORT}.`;
+    const apiMessages = [
+      ...chatHistory.slice(-(CONTEXT_MSGS + 1), -1).map(h => ({ role: h.role, content: h.content })),
+      { role: 'user', content: message.trim() },
+    ];
+
+    callViaApiKey(systemPrompt, apiMessages).then(reply => {
+      const s = activeStreams.get(streamId);
+      if (!s) return;
+      s.fullText = reply;
+      _sseEmit(s, 'text', { text: reply });
+      _sseEmit(s, 'result', { subtype: 'success', result: reply });
+      _sseEmit(s, 'close', { code: 0 });
+      s.done = true;
+      const tss = new Date().toISOString();
+      chatHistory.push({ role: 'assistant', content: reply, ts: tss });
+      saveChatHistory();
+      claudeLog('assistant', reply, { authMode: 'api-key', streamId });
+      audit('claude.chat', { authMode: 'api-key', replyLen: reply.length, streamId });
+    }).catch(err => {
+      const s = activeStreams.get(streamId);
+      if (s) _sseEmit(s, 'error', { message: err.message });
+      audit('claude.api_error', { error: err.message, streamId });
+    });
+
+    res.json({ streamId, mode: 'stream' });
+  }
+});
+
+// Helper: emit SSE event, buffer if no connection yet
+function _sseEmit(stream, event, data) {
+  const line = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  if (stream.sseRes && !stream.sseRes.writableEnded) {
+    stream.sseRes.write(line);
+  } else {
+    stream.buffered.push(line);
+  }
+}
+
+// ─── SSE stream endpoint — just attach and flush buffer ───────────────────────
+app.get('/api/claude/stream/:id', (req, res) => {
+  const stream = activeStreams.get(req.params.id);
+  if (!stream) return res.status(404).json({ error: 'Stream not found or expired' });
+
+  res.set({
+    'Content-Type':      'text/event-stream',
+    'Cache-Control':     'no-cache',
+    'Connection':        'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+  stream.sseRes = res;
+
+  // Flush any events that arrived before we connected
+  for (const line of stream.buffered) res.write(line);
+  stream.buffered = [];
+
+  // If child already closed and done, end the response now
+  if (stream.done) { res.end(); return; }
+
+  req.on('close', () => {
+    if (!stream.done && stream.child) stream.child.kill('SIGTERM');
+  });
+});
+
+// ─── Respond to a permission request or ask_user question ────────────────────
+app.post('/api/claude/respond/:id', (req, res) => {
+  const stream = activeStreams.get(req.params.id);
+  if (!stream || !stream.child) return res.status(404).json({ error: 'Stream not found' });
+  const { response } = req.body; // "y", "n", or text answer
+  if (response === undefined) return res.status(400).json({ error: 'response required' });
+  stream.child.stdin.write(String(response) + '\n');
+  audit('claude.permission_response', { response: String(response), streamId: req.params.id });
+  res.json({ ok: true });
+});
+
+// ─── New session (clears --resume session ID) ─────────────────────────────────
+app.post('/api/claude/new-session', (req, res) => {
+  const old = claudeSessionId;
+  claudeSessionId = null;
+  try {
+    const f = path.join(__dirname, 'data', 'claude-config.json');
+    const cfg = JSON.parse(fs.readFileSync(f, 'utf8'));
+    delete cfg.cliSessionId;
+    fs.writeFileSync(f, JSON.stringify(cfg, null, 2));
+  } catch {}
+  audit('claude.new_session', { clearedSession: old });
+  res.json({ ok: true });
 });
 
 // ─── API: clear chat history ──────────────────────────────────────────────────
