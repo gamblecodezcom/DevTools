@@ -445,8 +445,12 @@ tr:hover td { background: var(--bg3); }
       <div class="step" id="tg-step-2">
         <div class="step-num">2</div>
         <div class="step-content">
-          <h3>Log In with Phone Number</h3>
-          <p>Complete the Telegram login in the proxy view. Your session cookies will be automatically saved after login.</p>
+          <h3>Paste Cookies (fastest)</h3>
+          <p style="font-size:11px;color:var(--muted)">Open Telegram Web in Chrome → F12 → Application → Cookies → copy all → paste below.</p>
+          <textarea id="tg-cookie-paste" rows="3" placeholder="stel_ssid=xxx; stel_token=yyy; ..." style="width:100%;background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:11px;font-family:monospace;resize:vertical;margin-top:6px"></textarea>
+          <div class="step-actions" style="margin-top:6px">
+            <button class="btn btn-tg btn-sm" onclick="saveTgCookies()">Save Cookies</button>
+          </div>
         </div>
       </div>
 
@@ -570,6 +574,25 @@ let currentUrl = '';
 let scannerOn  = false;
 let useProxy   = false;
 let deferredInstall = null;
+
+// ── AUTH CHECK — detect expired session on any API call ────────────────────────
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    const d = await res.json().catch(() => ({}));
+    const loginUrl = d.loginUrl || window.location.origin + '/dev/auth';
+    if (!document.getElementById('auth-expired-banner')) {
+      const b = document.createElement('div');
+      b.id = 'auth-expired-banner';
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;text-align:center;padding:10px 16px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:12px';
+      b.innerHTML = `⚠ Session expired — <a href="${loginUrl}" style="color:#fff;font-weight:bold;text-decoration:underline">Re-authenticate</a>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;margin-left:8px">✕</button>`;
+      document.body.prepend(b);
+    }
+    return res;
+  }
+  return res;
+}
 const iframe     = document.getElementById('site-iframe');
 const proxyView  = document.getElementById('proxy-view');
 const overlay    = document.getElementById('view-overlay');
@@ -1024,9 +1047,10 @@ async function refreshClaudeStatus() {
 }
 
 async function toggleClaude() {
-  const data = await fetch('/api/claude/status').then(r => r.json()).catch(() => ({ active: true }));
+  const data = await apiFetch('/api/claude/status').then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!data) return;
   const endpoint = data.active ? '/api/claude/deactivate' : '/api/claude/activate';
-  await fetch(endpoint, { method: 'POST' });
+  await apiFetch(endpoint, { method: 'POST' });
   refreshClaudeStatus();
 }
 
@@ -1052,6 +1076,29 @@ async function saveTgBot() {
   logEvent('info', 'Telegram bot saved: @' + botUsername);
   document.getElementById('tg-bot-username').value = '';
   document.getElementById('tg-bot-token').value = '';
+}
+
+async function saveTgCookies() {
+  const raw = document.getElementById('tg-cookie-paste').value.trim();
+  if (!raw) return;
+  // Parse "name=value; name2=value2" cookie string into array of objects
+  const cookies = raw.split(';').map(s => {
+    const idx = s.indexOf('=');
+    if (idx < 0) return null;
+    return { name: s.slice(0, idx).trim(), value: s.slice(idx + 1).trim() };
+  }).filter(Boolean);
+  if (!cookies.length) { logEvent('warn', 'No cookies parsed'); return; }
+  const res = await apiFetch('/api/sessions/web.telegram.org', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cookies })
+  });
+  if (res.ok) {
+    logEvent('info', `Saved ${cookies.length} Telegram cookies`);
+    document.getElementById('tg-cookie-paste').value = '';
+    refreshSessionStatus();
+    updateTgModal();
+  }
 }
 
 async function refreshTgAuth() {

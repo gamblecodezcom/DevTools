@@ -179,8 +179,10 @@ app.use(session({
 
 function requireAdmin(req, res, next) {
   if (isAdmin(req)) return next();
-  // Return a simple auth challenge page
-  const cfg = loadAdminConfig();
+  // API calls get JSON 401 so JS callers can detect and prompt re-auth
+  if (req.path.startsWith('/api') || req.headers.accept?.includes('application/json')) {
+    return res.status(401).json({ error: 'Unauthorized', loginUrl: BASE + '/auth' });
+  }
   res.status(403).send(adminLoginPage(req.originalUrl));
 }
 
