@@ -1,6 +1,6 @@
 // GambleCodez Web Lab — Service Worker
 const CACHE = 'gcz-lab-v1';
-const OFFLINE_URLS = ['/', '/index.html'];
+const OFFLINE_URLS = ['/dev/', '/dev/index.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(OFFLINE_URLS)));

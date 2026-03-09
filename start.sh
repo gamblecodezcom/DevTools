@@ -1,33 +1,27 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/bin/bash
 ###############################################
-# GambleCodez // Web Lab — Start Script
+# GambleCodez // DevTools — VPS Start Script
 ###############################################
 
-export PREFIX="/data/data/com.termux/files/usr"
-export TMPDIR="$HOME/.claude-tmp"
-export PATH="$PREFIX/bin:$HOME/bin:$PATH"
+export PORT=3002
+export SKIP_TUNNEL=1
+export PUBLIC_BASE="https://bot.gamblecodez.com/dev"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"
 
-# Ensure tmp dir
-mkdir -p "$HOME/.claude-tmp"
-
-# Install deps if needed
 if [ ! -d "node_modules" ]; then
-  echo "📦 Installing dependencies..."
-  npm install --no-bin-links
+  echo "Installing dependencies..."
+  npm install
 fi
 
 echo ""
-echo "╔══════════════════════════════════════════════╗"
-echo "║     GambleCodez // Web Lab  v1.0             ║"
-echo "╠══════════════════════════════════════════════╣"
-echo "║  Starting on http://127.0.0.1:3000           ║"
-echo "╚══════════════════════════════════════════════╝"
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║     GambleCodez // DevTools  v3.0                           ║"
+echo "╠══════════════════════════════════════════════════════════════╣"
+echo "║  Port:    3002                                               ║"
+echo "║  Public:  https://bot.gamblecodez.com/dev                   ║"
+echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
-
-# Keep screen on (Termux:API — optional, won't fail if not installed)
-termux-wake-lock 2>/dev/null || true
 
 node server.js

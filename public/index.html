@@ -7,25 +7,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffd700">
-<title>GambleCodez // Web Lab</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<title>GambleCodez // DevTools</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <style>
 :root {
-  --gold: #ffd700;
-  --gold2: #ffaa00;
-  --cyan: #00e5ff;
-  --bg: #0a0a0f;
-  --bg2: #111118;
-  --bg3: #1a1a26;
-  --border: #2a2a3a;
-  --text: #e0e0f0;
-  --muted: #6060a0;
-  --red: #ff4466;
-  --green: #00ff88;
-  --radius: 8px;
+  --gold: #ffd700; --gold2: #ffaa00; --cyan: #00e5ff;
+  --bg: #0a0a0f; --bg2: #111118; --bg3: #1a1a26;
+  --border: #2a2a3a; --text: #e0e0f0; --muted: #6060a0;
+  --red: #ff4466; --green: #00ff88; --radius: 8px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
@@ -34,53 +25,58 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #topbar {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px; background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap; z-index: 100;
+  border-bottom: 1px solid var(--border); flex-wrap: wrap; z-index: 100;
 }
-#brand { font-size: 13px; font-weight: 700; color: var(--gold); white-space: nowrap; letter-spacing: 1px; }
+#brand { font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; letter-spacing: 1px; }
 #brand span { color: var(--cyan); }
 #urlbar {
   flex: 1; min-width: 140px; padding: 7px 10px;
   background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
   color: var(--text); font-size: 13px; outline: none;
 }
-#urlbar:focus { border-color: var(--gold); }
+#urlbar:focus { border-color: var(--cyan); }
 .btn {
   padding: 7px 12px; border: none; border-radius: var(--radius);
-  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
-  transition: opacity .15s;
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .15s;
 }
 .btn:active { opacity: .7; }
-.btn-gold { background: var(--gold); color: #000; }
-.btn-dark { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
-.btn-cyan { background: var(--cyan); color: #000; }
-.btn-red  { background: var(--red); color: #fff; }
-.btn-green{ background: var(--green); color: #000; }
-.btn-sm { padding: 5px 9px; font-size: 11px; }
-
+.btn-gold  { background: var(--gold); color: #000; }
+.btn-dark  { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.btn-cyan  { background: var(--cyan); color: #000; }
+.btn-red   { background: var(--red); color: #fff; }
+.btn-green { background: var(--green); color: #000; }
+.btn-sm    { padding: 5px 9px; font-size: 11px; }
+.btn-purple { background: #7289da; color: #fff; }
+.btn-tg     { background: #29b6f6; color: #000; }
 #nav-btns { display: flex; gap: 4px; }
 #scanner-wrap { display: flex; align-items: center; gap: 6px; }
 #scanner-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
 #scanner-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
+/* ── STATUS BAR ── */
+#status-bar {
+  display: flex; align-items: center; gap: 8px; padding: 5px 10px;
+  background: #0d0d18; border-bottom: 1px solid var(--border); font-size: 11px; flex-wrap: wrap;
+}
+#public-url { color: var(--cyan); font-family: monospace; font-size: 11px; }
+
 /* ── QUICK TARGETS ── */
 #quick-bar {
   display: flex; gap: 6px; padding: 6px 10px;
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-  overflow-x: auto; flex-wrap: wrap;
+  background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: wrap;
 }
 .qtag {
   padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
   cursor: pointer; white-space: nowrap; border: 1px solid transparent;
 }
-.qtag-tg  { background: #1a2a3a; color: #29b6f6; border-color: #29b6f6; }
-.qtag-dc  { background: #1a1a3a; color: #7289da; border-color: #7289da; }
-.qtag-gc  { background: #1a1500; color: var(--gold); border-color: var(--gold); }
-.qtag-gg  { background: #1a1000; color: #ea4335; border-color: #ea4335; }
-.ss-dot   { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; }
-.ss-active{ background: var(--green); }
-.ss-none  { background: var(--muted); }
+.qtag-tg { background: #1a2a3a; color: #29b6f6; border-color: #29b6f6; }
+.qtag-dc { background: #1a1a3a; color: #7289da; border-color: #7289da; }
+.qtag-gc { background: #1a1500; color: var(--gold); border-color: var(--gold); }
+.qtag-gg { background: #1a1000; color: #ea4335; border-color: #ea4335; }
+.ss-dot  { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; }
+.ss-active { background: var(--green); }
+.ss-none   { background: var(--muted); }
 
 /* ── INSTALL BANNER ── */
 #install-banner {
@@ -91,39 +87,27 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #install-banner.show { display: flex; }
 
 /* ── LAYOUT ── */
-#main {
-  display: flex; flex-direction: column;
-  height: calc(100vh - 100px); /* adjust dynamically via JS */
-}
-#view-area {
-  flex: 1; position: relative; background: #fff; overflow: hidden;
-}
-#site-iframe {
-  width: 100%; height: 100%; border: none; display: block;
-}
-#proxy-view {
-  display: none; width: 100%; height: 100%;
-  overflow-y: auto; background: #fff; color: #000;
-  padding: 0;
-}
+#main { display: flex; flex-direction: column; height: calc(100vh - 110px); }
+#view-area { flex: 1; position: relative; background: #fff; overflow: hidden; }
+#site-iframe { width: 100%; height: 100%; border: none; display: block; }
+#proxy-view  { display: none; width: 100%; height: 100%; overflow-y: auto; background: #fff; color: #000; }
 #proxy-view iframe { width: 100%; height: 100%; border: none; }
 #view-overlay {
-  display: none; position: absolute; inset: 0;
-  background: var(--bg); align-items: center; justify-content: center;
-  flex-direction: column; gap: 12px; font-size: 14px; color: var(--muted);
+  display: none; position: absolute; inset: 0; background: var(--bg);
+  align-items: center; justify-content: center; flex-direction: column; gap: 12px; font-size: 14px; color: var(--muted);
 }
 #view-overlay.show { display: flex; }
 #view-status { font-size: 12px; color: var(--cyan); }
 
 /* ── DEV PANEL ── */
 #devpanel {
-  height: 280px; background: var(--bg2);
+  height: 300px; background: var(--bg2);
   border-top: 2px solid var(--gold); display: flex; flex-direction: column;
   resize: vertical; overflow: hidden; min-height: 160px;
 }
 #panel-tabs {
   display: flex; border-bottom: 1px solid var(--border);
-  background: var(--bg3); overflow-x: auto;
+  background: var(--bg3); overflow-x: auto; flex-shrink: 0;
 }
 .ptab {
   padding: 8px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
@@ -149,28 +133,10 @@ tr:hover td { background: var(--bg3); }
 /* ── LOGS ── */
 #log-list { font-size: 11px; font-family: monospace; }
 .log-entry { padding: 3px 0; border-bottom: 1px solid var(--border); }
-.log-claim { color: var(--gold); }
-.log-reward { color: var(--cyan); }
-.log-daily { color: var(--green); }
-.log-bonus { color: #ff88ff; }
-.log-gold  { color: var(--gold2); }
-.log-coins { color: #88ffff; }
-.log-info  { color: var(--muted); }
-
-/* ── SAVED TESTS ── */
-.test-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
-.test-name { flex: 1; font-size: 12px; color: var(--text); }
-.test-url  { flex: 2; font-size: 10px; color: var(--muted); word-break: break-all; }
-
-/* ── SESSIONS ── */
-.sess-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border); }
-.sess-domain { flex: 1; font-size: 12px; }
-.sess-count { font-size: 11px; color: var(--cyan); }
-
-/* ── REDIRECT CHAIN ── */
-.chain-item { font-size: 11px; padding: 2px 0; color: var(--cyan); word-break: break-all; }
-.chain-item:last-child { color: var(--green); font-weight: 700; }
-.chain-arrow { color: var(--muted); }
+.log-info { color: var(--muted); }
+.log-claim,.log-gold,.log-reward { color: var(--gold); }
+.log-share { color: var(--cyan); }
+.log-error { color: var(--red); }
 
 /* ── FILTER BAR ── */
 .filter-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
@@ -179,94 +145,85 @@ tr:hover td { background: var(--bg3); }
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); color: var(--text); font-size: 11px;
 }
+.filter-input:focus { border-color: var(--cyan); outline: none; }
 
 /* ── REPLAY ── */
-#replay-url   { width: 100%; margin-bottom: 6px; }
-#replay-body  { width: 100%; min-height: 60px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 11px; padding: 6px; font-family: monospace; resize: vertical; }
-#replay-result{ margin-top: 8px; background: var(--bg3); border-radius: var(--radius); padding: 8px; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto; color: var(--green); display: none; }
+#replay-body { width: 100%; min-height: 60px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 11px; padding: 6px; font-family: monospace; resize: vertical; margin-bottom: 6px; }
+#replay-result { margin-top: 8px; background: var(--bg3); border-radius: var(--radius); padding: 8px; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto; color: var(--green); display: none; }
+
+/* ── SESSIONS ── */
+.sess-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.sess-domain { flex: 1; font-size: 12px; min-width: 120px; }
+.sess-count  { font-size: 11px; color: var(--cyan); }
+
+/* ── SHARE LINKS ── */
+.share-row { padding: 8px; margin-bottom: 6px; background: var(--bg3); border-radius: 8px; border: 1px solid var(--border); }
+.share-row.active-link { border-color: var(--cyan); }
+.share-row.expired-link { opacity: .6; }
+.share-meta { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.share-url  { font-size: 11px; color: var(--cyan); font-family: monospace; word-break: break-all; margin: 4px 0; }
+.share-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+/* ── SAVED TESTS ── */
+.test-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.test-name { flex: 1; font-size: 12px; color: var(--text); }
+.test-url  { flex: 2; font-size: 10px; color: var(--muted); word-break: break-all; }
+
+/* ── REDIRECT CHAIN ── */
+.chain-item { font-size: 11px; padding: 2px 0; color: var(--cyan); word-break: break-all; }
+.chain-item:last-child { color: var(--green); font-weight: 700; }
+.chain-arrow { color: var(--muted); }
 
 /* ── MODAL ── */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; z-index: 1000;
-  background: rgba(0,0,0,.85); align-items: center; justify-content: center;
-  backdrop-filter: blur(4px);
-}
+.modal-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.85); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
 .modal-overlay.show { display: flex; }
-.modal {
-  background: var(--bg2); border: 1px solid var(--gold);
-  border-radius: 14px; padding: 0; width: min(92vw, 480px);
-  max-height: 88vh; overflow-y: auto; box-shadow: 0 0 40px rgba(255,215,0,.15);
-}
-.modal-head {
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
+.modal { background: var(--bg2); border: 1px solid var(--gold); border-radius: 14px; padding: 0; width: min(92vw, 480px); max-height: 88vh; overflow-y: auto; box-shadow: 0 0 40px rgba(255,215,0,.15); }
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
 .modal-head h2 { font-size: 15px; color: var(--gold); }
 .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0 4px; }
 .modal-body { padding: 16px 20px; }
-.step {
-  display: flex; gap: 12px; align-items: flex-start;
-  padding: 12px; margin-bottom: 10px;
-  background: var(--bg3); border-radius: 10px; border: 1px solid var(--border);
-  transition: border-color .2s;
-}
-.step.done { border-color: var(--green); }
+.step { display: flex; gap: 12px; align-items: flex-start; padding: 12px; margin-bottom: 10px; background: var(--bg3); border-radius: 10px; border: 1px solid var(--border); transition: border-color .2s; }
+.step.done   { border-color: var(--green); }
 .step.active { border-color: var(--gold); }
-.step-num {
-  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; background: var(--border); color: var(--muted);
-}
-.step.done .step-num { background: var(--green); color: #000; }
+.step-num { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--border); color: var(--muted); }
+.step.done .step-num   { background: var(--green); color: #000; }
 .step.active .step-num { background: var(--gold); color: #000; }
 .step-content h3 { font-size: 13px; margin-bottom: 4px; color: var(--text); }
 .step-content p  { font-size: 11px; color: var(--muted); line-height: 1.5; }
 .step-content code { background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--cyan); font-size: 11px; }
 .step-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.form-row label { font-size: 11px; color: var(--muted); }
+.form-row input, .form-row select { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); padding: 7px 10px; font-size: 12px; width: 100%; outline: none; }
+.form-row input:focus, .form-row select:focus { border-color: var(--cyan); }
 
-/* ── CHAT PANEL ── */
+/* ── CHAT ── */
 #chat-wrap { display: flex; flex-direction: column; height: 100%; }
-#chat-status-bar {
-  display: flex; align-items: center; gap: 8px; padding: 6px 0;
-  border-bottom: 1px solid var(--border); margin-bottom: 6px;
-}
+#chat-status-bar { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
 #claude-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
 #claude-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
-#chat-messages {
-  flex: 1; overflow-y: auto; padding: 4px 0; display: flex;
-  flex-direction: column; gap: 8px; max-height: 160px;
-}
+#chat-messages { flex: 1; overflow-y: auto; padding: 4px 0; display: flex; flex-direction: column; gap: 8px; max-height: 160px; }
 .chat-msg { padding: 8px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; max-width: 90%; white-space: pre-wrap; word-break: break-word; }
-.chat-msg.user { background: #1a2a1a; color: var(--green); align-self: flex-end; border: 1px solid #2a4a2a; }
+.chat-msg.user   { background: #1a2a1a; color: var(--green); align-self: flex-end; border: 1px solid #2a4a2a; }
 .chat-msg.claude { background: var(--bg3); color: var(--text); align-self: flex-start; border: 1px solid var(--border); }
-.chat-msg.error { background: #2a0a0a; color: var(--red); align-self: flex-start; }
+.chat-msg.error  { background: #2a0a0a; color: var(--red); align-self: flex-start; }
 #chat-input-row { display: flex; gap: 6px; margin-top: 6px; }
-#chat-input {
-  flex: 1; padding: 7px 10px; background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--text); font-size: 12px; resize: none;
-  min-height: 36px; max-height: 80px; font-family: inherit;
-}
+#chat-input { flex: 1; padding: 7px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 12px; resize: none; min-height: 36px; max-height: 80px; font-family: inherit; }
 #chat-input:focus { border-color: var(--cyan); outline: none; }
-#api-key-row {
-  display: flex; gap: 6px; margin-bottom: 8px; align-items: center;
-}
-#api-key-input {
-  flex: 1; padding: 5px 8px; background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--text); font-size: 11px; font-family: monospace;
-}
+#api-key-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: flex-start; flex-direction: column; }
 </style>
 </head>
 <body>
 
 <!-- INSTALL BANNER -->
 <div id="install-banner">
-  <span>⚡ Install GCZ Web Lab as a home screen app for full standalone mode</span>
+  <span>⚡ Install GCZ DevTools as home screen app</span>
   <button class="btn btn-gold btn-sm" id="install-btn">Install</button>
 </div>
 
 <!-- TOP BAR -->
 <div id="topbar">
-  <div id="brand">GAMBLE<span>CODEZ</span> // WEB LAB</div>
+  <div id="brand">GAMBLE<span>CODEZ</span> // DEVTOOLS</div>
   <input id="urlbar" type="url" placeholder="https://target-site.com" autocomplete="off" spellcheck="false">
   <button class="btn btn-gold" onclick="loadSite()">Load</button>
   <div id="nav-btns">
@@ -280,111 +237,39 @@ tr:hover td { background: var(--bg3); }
   </div>
 </div>
 
-<!-- TUNNEL BAR -->
-<div id="tunnel-bar" style="display:flex;align-items:center;gap:8px;padding:5px 10px;background:#0d0d18;border-bottom:1px solid var(--border);font-size:11px;flex-wrap:wrap;">
+<!-- STATUS BAR -->
+<div id="status-bar">
   <span style="color:var(--muted)">🌐</span>
-  <span id="tunnel-url" style="color:var(--muted);font-family:monospace">starting...</span>
-  <button class="btn btn-dark btn-sm" onclick="copyTunnelUrl()">Copy</button>
-  <button class="btn btn-dark btn-sm" id="tunnel-toggle" onclick="toggleTunnel()">Stop</button>
-  <span id="tunnel-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span>
+  <span id="public-url">https://bot.gamblecodez.com/dev</span>
+  <span id="view-status" style="color:var(--cyan);font-size:11px"></span>
   <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-    <span id="claude-status-label" style="font-size:11px;color:var(--muted)">Claude CLI: —</span>
+    <span id="claude-status-label" style="font-size:11px;color:var(--muted)">Claude: —</span>
     <span id="claude-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span>
     <button class="btn btn-dark btn-sm" onclick="showTab('chat')" style="border-color:var(--cyan);color:var(--cyan)">💬 Chat</button>
   </span>
 </div>
 
-<!-- TELEGRAM SETUP MODAL -->
-<div class="modal-overlay" id="tg-modal">
-  <div class="modal">
-    <div class="modal-head">
-      <h2>✈ Telegram Login Setup</h2>
-      <button class="modal-close" onclick="closeModal('tg-modal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Telegram's login widget requires a registered public HTTPS domain. Follow these steps once, then your session will persist automatically.</p>
-
-      <div class="step active" id="tg-step-1">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h3>Start Public Tunnel</h3>
-          <p>Your tunnel must be running so Telegram can reach it.</p>
-          <div id="tg-tunnel-status" style="margin-top:6px;font-size:11px;color:var(--muted)">Checking tunnel...</div>
-          <div class="step-actions">
-            <button class="btn btn-gold btn-sm" onclick="tgEnsureTunnel()">Start Tunnel</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="step" id="tg-step-2">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h3>Register Domain with @BotFather</h3>
-          <p>Open Telegram → search <code>@BotFather</code> → send <code>/setdomain</code> → select your bot → paste your tunnel URL below.</p>
-          <div id="tg-url-display" style="margin:8px 0;padding:6px 10px;background:var(--bg);border-radius:6px;font-family:monospace;font-size:11px;color:var(--cyan);word-break:break-all">—</div>
-          <div class="step-actions">
-            <button class="btn btn-cyan btn-sm" onclick="copyTunnelUrl();logEvent('info','Tunnel URL copied for BotFather')">Copy URL</button>
-            <button class="btn btn-dark btn-sm" onclick="openExternal('https://t.me/botfather')">Open @BotFather</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="step" id="tg-step-3">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <h3>Open Telegram Web &amp; Login</h3>
-          <p>This opens Telegram Web via your tunnel URL so cookies are saved under the correct domain. Login with your phone number.</p>
-          <div class="step-actions">
-            <button class="btn btn-gold btn-sm" onclick="tgOpenViaProxy()">Open Telegram Web</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="step" id="tg-step-4">
-        <div class="step-num">4</div>
-        <div class="step-content">
-          <h3>Session Saved ✓</h3>
-          <p>After logging in, your Telegram session cookies are stored locally. Future visits will auto-restore your session — including for Claude CLI bot testing.</p>
-          <div id="tg-session-status" style="margin-top:6px;font-size:11px;color:var(--muted)">Checking session...</div>
-          <div class="step-actions">
-            <button class="btn btn-green btn-sm" onclick="refreshSessionStatus();updateTgModal()">Check Session</button>
-            <button class="btn btn-dark btn-sm" onclick="closeModal('tg-modal')">Done</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- QUICK TARGETS -->
 <div id="quick-bar">
-  <span class="qtag qtag-tg" onclick="openTgModal()">
-    ✈ Telegram<span class="ss-dot ss-none" id="ss-tg"></span>
-  </span>
-  <span class="qtag qtag-dc" onclick="openExternal('https://discord.com/app')">
-    🎮 Discord<span class="ss-dot ss-none" id="ss-dc"></span>
-  </span>
-  <span class="qtag qtag-gg" onclick="quickLoad('https://accounts.google.com')">
-    G Google Login
-  </span>
-  <span class="qtag qtag-gc" onclick="quickLoad('https://gamblecodez.com')">
-    🎰 gamblecodez.com
-  </span>
-  <span class="qtag qtag-gc" onclick="document.getElementById('urlbar').focus()" style="border-color:var(--muted);color:var(--muted)">
-    + Custom URL
-  </span>
+  <span class="qtag qtag-tg" onclick="openTgModal()">✈ Telegram<span class="ss-dot ss-none" id="ss-tg"></span></span>
+  <span class="qtag qtag-dc" onclick="openDcModal()">🎮 Discord<span class="ss-dot ss-none" id="ss-dc"></span></span>
+  <span class="qtag qtag-gg" onclick="quickLoad('https://accounts.google.com')">G Google</span>
+  <span class="qtag qtag-gc" onclick="quickLoad('https://gamblecodez.com')">🎰 gamblecodez.com</span>
+  <span class="qtag" style="border-color:var(--muted);color:var(--muted)" onclick="document.getElementById('urlbar').focus()">+ Custom URL</span>
 </div>
 
 <!-- MAIN VIEW -->
 <div id="main">
   <div id="view-area">
-    <iframe id="site-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation" allowfullscreen></iframe>
-    <div id="proxy-view"></div>
+    <iframe id="site-iframe"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-pointer-lock allow-downloads allow-modals allow-orientation-lock allow-presentation allow-storage-access-by-user-activation"
+      allow="camera; microphone; geolocation; clipboard-read; clipboard-write; fullscreen; display-capture; payment; accelerometer; gyroscope; magnetometer; midi; usb; hid; serial; bluetooth; ambient-light-sensor; autoplay"
+      allowfullscreen allowpaymentrequest></iframe>
+    <div id="proxy-view"><!-- proxy iframe injected here --></div>
     <div id="view-overlay" class="show">
-      <div style="font-size:28px">🎰</div>
-      <div style="color:var(--gold);font-weight:700">GambleCodez // Web Lab</div>
-      <div>Enter a URL above or pick a Quick Target</div>
-      <div id="view-status"></div>
+      <div style="font-size:32px">🎰</div>
+      <div style="color:var(--gold);font-weight:700;font-size:16px">GambleCodez // DevTools</div>
+      <div style="font-size:12px">Enter a URL above or pick a Quick Target</div>
     </div>
   </div>
 
@@ -395,6 +280,7 @@ tr:hover td { background: var(--bg3); }
       <div class="ptab" onclick="showTab('redirects')">Redirects</div>
       <div class="ptab" onclick="showTab('actions')">Actions</div>
       <div class="ptab" onclick="showTab('sessions')">Sessions</div>
+      <div class="ptab" onclick="showTab('share')">🔗 Share Links</div>
       <div class="ptab" onclick="showTab('saved')">Saved Tests</div>
       <div class="ptab" onclick="showTab('logs')">Logs</div>
       <div class="ptab" onclick="showTab('chat')" style="color:var(--cyan)">💬 Claude</div>
@@ -404,7 +290,7 @@ tr:hover td { background: var(--bg3); }
       <!-- NETWORK -->
       <div class="pane active" id="pane-network">
         <div class="filter-row">
-          <input class="filter-input" id="net-filter" placeholder="Filter: claim, reward, daily, bonus, api…" oninput="refreshNetwork()">
+          <input class="filter-input" id="net-filter" placeholder="Filter: claim, reward, daily, api…" oninput="refreshNetwork()">
           <button class="btn btn-dark btn-sm" onclick="refreshNetwork()">↻</button>
           <button class="btn btn-red btn-sm" onclick="clearNetwork()">Clear</button>
         </div>
@@ -425,7 +311,7 @@ tr:hover td { background: var(--bg3); }
 
       <!-- ACTIONS / REPLAY -->
       <div class="pane" id="pane-actions">
-        <div style="margin-bottom:8px;font-size:12px;color:var(--muted)">Request Replay — uses saved session cookies for the target domain</div>
+        <div style="margin-bottom:8px;font-size:12px;color:var(--muted)">Request Replay — uses saved session cookies</div>
         <div class="filter-row">
           <input class="filter-input" id="replay-url" type="url" placeholder="https://target.com/api/claim">
           <select id="replay-method" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:5px 8px;font-size:11px;">
@@ -433,10 +319,10 @@ tr:hover td { background: var(--bg3); }
           </select>
         </div>
         <textarea id="replay-body" placeholder='{"key":"value"}  — optional JSON body'></textarea>
-        <div class="filter-row" style="margin-top:6px">
-          <button class="btn btn-gold" onclick="runReplay()">▶ Run Request</button>
-          <button class="btn btn-cyan btn-sm" onclick="saveCurrentAsTest()">💾 Save Test</button>
-          <button class="btn btn-dark btn-sm" onclick="openInNew()">↗ Open in Tab</button>
+        <div class="filter-row">
+          <button class="btn btn-gold" onclick="runReplay()">▶ Run</button>
+          <button class="btn btn-cyan btn-sm" onclick="saveCurrentAsTest()">💾 Save</button>
+          <button class="btn btn-dark btn-sm" onclick="openInNew()">↗ Open</button>
         </div>
         <pre id="replay-result"></pre>
       </div>
@@ -448,6 +334,26 @@ tr:hover td { background: var(--bg3); }
           <button class="btn btn-red btn-sm" onclick="clearAllSessions()">🗑 Clear All</button>
         </div>
         <div id="session-list"></div>
+        <div style="margin-top:10px;padding:8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Manually add cookies for a domain:</div>
+          <div class="filter-row">
+            <input class="filter-input" id="manual-domain" placeholder="domain.com">
+            <input class="filter-input" id="manual-cookie" placeholder="name=value; name2=value2">
+            <button class="btn btn-cyan btn-sm" onclick="addManualCookies()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHARE LINKS -->
+      <div class="pane" id="pane-share">
+        <div class="filter-row">
+          <button class="btn btn-gold btn-sm" onclick="openShareModal(null)">+ Create Share Link</button>
+          <button class="btn btn-dark btn-sm" onclick="refreshShareLinks()">↻</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+          Share links give one-time or time-limited authenticated access to a site — no DevTools UI exposure.
+        </div>
+        <div id="share-list"><div style="color:var(--muted);text-align:center;padding:12px">No share links yet</div></div>
       </div>
 
       <!-- SAVED TESTS -->
@@ -458,34 +364,6 @@ tr:hover td { background: var(--bg3); }
         <div id="saved-tests-list"></div>
       </div>
 
-      <!-- CLAUDE CHAT -->
-      <div class="pane" id="pane-chat">
-        <div id="chat-wrap">
-          <div id="chat-status-bar">
-            <span id="claude-dot"></span>
-            <span id="claude-status-text" style="font-size:11px;color:var(--muted)">Checking Claude CLI…</span>
-            <span style="margin-left:auto;font-size:10px;color:var(--muted)">Uses your Anthropic API key</span>
-          </div>
-          <div id="api-key-row" style="flex-direction:column;gap:4px">
-            <div style="display:flex;gap:4px">
-              <input id="vps-url-input" class="filter-input" placeholder="VPS Bridge URL: https://gamble-codez.com:4000" style="flex:2">
-              <input id="vps-token-input" class="filter-input" type="password" placeholder="Bridge token" style="flex:1">
-              <button class="btn btn-cyan btn-sm" onclick="saveBridge()">Save</button>
-              <button class="btn btn-dark btn-sm" id="bridge-toggle-btn" onclick="toggleBridge()">Stop</button>
-            </div>
-            <div style="display:flex;gap:4px">
-              <input id="api-key-input" class="filter-input" type="password" placeholder="Or: sk-ant-... local Anthropic API key (fallback)">
-              <button class="btn btn-dark btn-sm" onclick="saveApiKey()">Save</button>
-            </div>
-          </div>
-          <div id="chat-messages"></div>
-          <div id="chat-input-row">
-            <textarea id="chat-input" placeholder="Ask Claude anything about your code, bots, sessions…" rows="2"></textarea>
-            <button class="btn btn-cyan btn-sm" onclick="sendChat()" style="align-self:flex-end">Send</button>
-          </div>
-        </div>
-      </div>
-
       <!-- LOGS -->
       <div class="pane" id="pane-logs">
         <div class="filter-row">
@@ -494,26 +372,214 @@ tr:hover td { background: var(--bg3); }
         <div id="log-list"></div>
       </div>
 
+      <!-- CLAUDE CHAT -->
+      <div class="pane" id="pane-chat">
+        <div id="chat-wrap">
+          <div id="chat-status-bar">
+            <span id="claude-dot"></span>
+            <span id="claude-status-text" style="font-size:11px;color:var(--muted)">Checking Claude…</span>
+            <span style="margin-left:auto;display:flex;gap:4px">
+              <button id="claude-toggle-btn" class="btn btn-dark btn-sm" onclick="toggleClaude()">Toggle</button>
+              <button class="btn btn-dark btn-sm" onclick="clearChatHistory()">Clear</button>
+              <button class="btn btn-dark btn-sm" onclick="document.getElementById('admin-info').classList.toggle('hidden')">Admin</button>
+            </span>
+          </div>
+          <div id="admin-info" class="hidden" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px;font-size:11px;">
+            <div style="color:var(--muted);margin-bottom:4px">Admin login URL (keep private):</div>
+            <div id="admin-login-url" style="color:var(--cyan);font-family:monospace;word-break:break-all;margin-bottom:6px">Loading...</div>
+            <div class="filter-row" style="margin-bottom:6px">
+              <button class="btn btn-cyan btn-sm" onclick="copyAdminUrl()">Copy Login URL</button>
+              <button class="btn btn-red btn-sm" onclick="resetAdminToken()">Reset Token</button>
+            </div>
+            <div style="display:flex;gap:4px;margin-bottom:4px">
+              <input id="api-key-input" class="filter-input" type="password" placeholder="sk-ant-... Anthropic API key (fallback if CLI unavailable)">
+              <button class="btn btn-dark btn-sm" onclick="saveApiKey()">Save</button>
+            </div>
+            <div style="color:var(--muted);font-size:10px">Telegram bot (for login widget):</div>
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <input id="tg-bot-username" class="filter-input" placeholder="bot_username (no @)">
+              <input id="tg-bot-token" class="filter-input" type="password" placeholder="Bot token (optional, for hash verify)">
+              <button class="btn btn-tg btn-sm" onclick="saveTgBot()">Save</button>
+            </div>
+          </div>
+          <div id="tg-auth-bar" style="display:none;background:#0a1a2a;border:1px solid #29b6f6;border-radius:6px;padding:6px 10px;font-size:11px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+            <span style="color:#29b6f6">✈ Telegram:</span>
+            <span id="tg-auth-user" style="color:var(--text)">Not logged in</span>
+            <button class="btn btn-tg btn-sm" onclick="openTgWidgetLogin()">Login</button>
+            <button class="btn btn-red btn-sm" onclick="clearTgAuth()">Clear</button>
+          </div>
+          <div id="chat-messages"></div>
+          <div id="chat-input-row">
+            <textarea id="chat-input" placeholder="Ask Claude anything — test bots, sessions, endpoints…" rows="2"></textarea>
+            <button class="btn btn-cyan btn-sm" onclick="sendChat()" style="align-self:flex-end">Send</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<script>
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let currentUrl = '';
-let scannerOn = false;
-let useProxy = false;
-let deferredInstall = null;
-const iframe = document.getElementById('site-iframe');
-const proxyView = document.getElementById('proxy-view');
-const overlay = document.getElementById('view-overlay');
+<!-- TELEGRAM MODAL -->
+<div class="modal-overlay" id="tg-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>✈ Telegram Web Login</h2>
+      <button class="modal-close" onclick="closeModal('tg-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Load Telegram Web through the DevTools proxy to capture and persist your session cookies automatically.</p>
 
-// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+      <div class="step active" id="tg-step-1">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Open Telegram Web via Proxy</h3>
+          <p>This loads web.telegram.org through the server proxy so cookies are captured under your session store.</p>
+          <div class="step-actions">
+            <button class="btn btn-tg btn-sm" onclick="tgLoadViaProxy()">Open Telegram Web (Proxy)</button>
+            <button class="btn btn-dark btn-sm" onclick="openExternal('https://web.telegram.org/k/')">Open Direct (no cookie capture)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="tg-step-2">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Log In with Phone Number</h3>
+          <p>Complete the Telegram login in the proxy view. Your session cookies will be automatically saved after login.</p>
+        </div>
+      </div>
+
+      <div class="step" id="tg-step-3">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Session Saved ✓</h3>
+          <div id="tg-session-status" style="margin-top:6px;font-size:11px;color:var(--muted)">Checking...</div>
+          <div class="step-actions">
+            <button class="btn btn-green btn-sm" onclick="refreshSessionStatus();updateTgModal()">Check Session</button>
+            <button class="btn btn-gold btn-sm" onclick="openShareModal('web.telegram.org')">🔗 Create Share Link</button>
+            <button class="btn btn-dark btn-sm" onclick="closeModal('tg-modal')">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCORD MODAL -->
+<div class="modal-overlay" id="dc-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>🎮 Discord Web Login</h2>
+      <button class="modal-close" onclick="closeModal('dc-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Load Discord through the proxy to capture your authentication session.</p>
+
+      <div class="step active">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Open Discord via Proxy</h3>
+          <p>Loads discord.com through the server proxy — cookies are saved automatically on login.</p>
+          <div class="step-actions">
+            <button class="btn btn-purple btn-sm" onclick="dcLoadViaProxy()">Open Discord (Proxy)</button>
+            <button class="btn btn-dark btn-sm" onclick="openExternal('https://discord.com/login')">Open Direct</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="dc-step-2">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Log In</h3>
+          <p>Complete Discord login in the proxy view. Session will be captured automatically.</p>
+        </div>
+      </div>
+
+      <div class="step" id="dc-step-3">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Session Saved ✓</h3>
+          <div id="dc-session-status" style="margin-top:6px;font-size:11px;color:var(--muted)">Checking...</div>
+          <div class="step-actions">
+            <button class="btn btn-green btn-sm" onclick="refreshSessionStatus();updateDcModal()">Check Session</button>
+            <button class="btn btn-gold btn-sm" onclick="openShareModal('discord.com')">🔗 Create Share Link</button>
+            <button class="btn btn-dark btn-sm" onclick="closeModal('dc-modal')">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE LINK MODAL -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>🔗 Create Share Link</h2>
+      <button class="modal-close" onclick="closeModal('share-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Creates a secure link that grants access to an authenticated site view — without exposing DevTools or session cookies.</p>
+      <div class="form-row">
+        <label>Domain (must have saved session)</label>
+        <input id="share-domain" placeholder="web.telegram.org" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label>Target URL</label>
+        <input id="share-target-url" placeholder="https://web.telegram.org/k/" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label>Label (optional)</label>
+        <input id="share-label" placeholder="My Telegram session">
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="form-row" style="flex:1">
+          <label>Expires in (minutes, 0 = never)</label>
+          <input id="share-ttl" type="number" value="0" min="0">
+        </div>
+        <div class="form-row" style="flex:1">
+          <label>Max uses (0 = unlimited)</label>
+          <input id="share-maxuses" type="number" value="1" min="0">
+        </div>
+      </div>
+      <div id="share-result" style="display:none;margin-top:10px;padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--cyan)">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Share link created:</div>
+        <div id="share-result-url" style="font-family:monospace;font-size:12px;color:var(--cyan);word-break:break-all;margin-bottom:8px"></div>
+        <div class="filter-row">
+          <button class="btn btn-cyan btn-sm" onclick="copyShareResultUrl()">Copy Link</button>
+          <button class="btn btn-dark btn-sm" onclick="closeModal('share-modal');showTab('share')">View All Links</button>
+        </div>
+      </div>
+      <div id="share-error" style="display:none;color:var(--red);font-size:12px;margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-gold" onclick="createShareLink()">Generate Link</button>
+        <button class="btn btn-dark" onclick="closeModal('share-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.hidden { display: none !important; }
+</style>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let currentUrl = '';
+let scannerOn  = false;
+let useProxy   = false;
+let deferredInstall = null;
+const iframe     = document.getElementById('site-iframe');
+const proxyView  = document.getElementById('proxy-view');
+const overlay    = document.getElementById('view-overlay');
+
+// ── SERVICE WORKER ─────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-// ── INSTALL BANNER ────────────────────────────────────────────────────────────
+// ── INSTALL BANNER ─────────────────────────────────────────────────────────────
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredInstall = e;
@@ -524,14 +590,12 @@ document.getElementById('install-btn').onclick = () => {
   document.getElementById('install-banner').classList.remove('show');
 };
 
-// ── URL BAR ───────────────────────────────────────────────────────────────────
-document.getElementById('urlbar').addEventListener('keydown', e => {
-  if (e.key === 'Enter') loadSite();
-});
+// ── URL BAR ────────────────────────────────────────────────────────────────────
+document.getElementById('urlbar').addEventListener('keydown', e => { if (e.key === 'Enter') loadSite(); });
 
 function openExternal(url) {
   window.open(url, '_blank');
-  logEvent('info', 'Opened external: ' + url);
+  logEvent('info', 'Opened: ' + url);
 }
 
 function normalizeUrl(url) {
@@ -541,26 +605,19 @@ function normalizeUrl(url) {
   return url;
 }
 
-// ── LOAD SITE ─────────────────────────────────────────────────────────────────
+// ── LOAD SITE ──────────────────────────────────────────────────────────────────
 async function loadSite(url) {
   url = url || document.getElementById('urlbar').value;
   url = normalizeUrl(url);
   if (!url) return;
   document.getElementById('urlbar').value = url;
   currentUrl = url;
-  setStatus('Checking iframe compatibility…');
-
+  setStatus('Checking iframe…');
   try {
-    const check = await fetch(`/api/iframe-check?url=${encodeURIComponent(url)}`).then(r=>r.json());
-    if (!check.blocked) {
-      loadInIframe(url);
-    } else {
-      setStatus('iframe blocked — loading via proxy…');
-      loadViaProxy(url);
-    }
-  } catch {
-    loadInIframe(url);
-  }
+    const check = await fetch(`/api/iframe-check?url=${encodeURIComponent(url)}`).then(r => r.json());
+    if (!check.blocked) { loadInIframe(url); }
+    else { setStatus('iframe blocked — loading via proxy…'); loadViaProxy(url); }
+  } catch { loadInIframe(url); }
   refreshSessionStatus();
   if (scannerOn) logEvent('info', `Loaded: ${url}`);
 }
@@ -586,10 +643,13 @@ async function loadViaProxy(url) {
   overlay.classList.remove('show');
   setStatus('Loading via proxy…');
   try {
-    const res = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+    const res  = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
     const html = await res.text();
     const finalUrl = res.headers.get('x-final-url') || url;
-    proxyView.innerHTML = `<iframe srcdoc="${escapeAttr(html)}" style="width:100%;height:100%;border:none;"></iframe>`;
+    proxyView.innerHTML = `<iframe srcdoc="${escapeAttr(html)}" style="width:100%;height:100%;border:none;"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-pointer-lock allow-downloads allow-modals allow-storage-access-by-user-activation"
+      allow="camera; microphone; geolocation; clipboard-read; clipboard-write; fullscreen; display-capture; payment; accelerometer; gyroscope; magnetometer; autoplay"
+      allowfullscreen></iframe>`;
     setStatus(`Proxied: ${finalUrl}`);
     if (scannerOn) logEvent('info', `Proxy loaded: ${finalUrl}`);
   } catch (err) {
@@ -598,73 +658,65 @@ async function loadViaProxy(url) {
   }
 }
 
-function escapeAttr(s) {
-  return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+function escapeAttr(s) { return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
-// ── NAV ───────────────────────────────────────────────────────────────────────
-function goBack()   { try { iframe.contentWindow.history.back(); } catch {} }
-function goFwd()    { try { iframe.contentWindow.history.forward(); } catch {} }
-function reloadSite() { if (currentUrl) loadSite(currentUrl); }
+// ── NAV ────────────────────────────────────────────────────────────────────────
+function goBack()    { try { iframe.contentWindow.history.back(); } catch {} }
+function goFwd()     { try { iframe.contentWindow.history.forward(); } catch {} }
+function reloadSite(){ if (currentUrl) loadSite(currentUrl); }
 
-// ── SCANNER ───────────────────────────────────────────────────────────────────
+// ── SCANNER ────────────────────────────────────────────────────────────────────
 async function toggleScanner() {
   scannerOn = !scannerOn;
-  await fetch('/api/scanner', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ active: scannerOn })
-  });
+  await fetch('/api/scanner', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: scannerOn }) });
   updateScannerUI();
 }
 function updateScannerUI() {
   const dot = document.getElementById('scanner-dot');
   const btn = document.getElementById('scanner-btn');
   if (scannerOn) { dot.className = 'on'; btn.textContent = 'Scanner ON'; btn.style.color = '#00ff88'; }
-  else { dot.className = ''; btn.textContent = 'Scanner OFF'; btn.style.color = ''; }
+  else           { dot.className = '';   btn.textContent = 'Scanner OFF'; btn.style.color = ''; }
 }
 
-// ── STATUS ────────────────────────────────────────────────────────────────────
+// ── STATUS ─────────────────────────────────────────────────────────────────────
 function setStatus(msg) { document.getElementById('view-status').textContent = msg; }
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
+// ── TABS ───────────────────────────────────────────────────────────────────────
 function showTab(name) {
-  document.querySelectorAll('.ptab').forEach((t,i) => {
-    const panes = ['network','redirects','actions','sessions','saved','logs'];
-    t.classList.toggle('active', t.onclick.toString().includes(name));
+  document.querySelectorAll('.ptab').forEach(t => {
+    t.classList.toggle('active', t.onclick && t.onclick.toString().includes(`'${name}'`));
   });
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
   document.getElementById('pane-' + name).classList.add('active');
-  if (name === 'network') refreshNetwork();
+  if (name === 'network')  refreshNetwork();
   if (name === 'redirects') refreshRedirects();
   if (name === 'sessions') refreshSessions();
-  if (name === 'saved') refreshSavedTests();
+  if (name === 'share')    refreshShareLinks();
+  if (name === 'saved')    refreshSavedTests();
 }
 
-// ── NETWORK ───────────────────────────────────────────────────────────────────
+// ── NETWORK ────────────────────────────────────────────────────────────────────
 async function refreshNetwork() {
-  const f = document.getElementById('net-filter').value;
-  const data = await fetch(`/api/network${f?'?filter='+encodeURIComponent(f):''}`).then(r=>r.json()).catch(()=>[]);
+  const f   = document.getElementById('net-filter').value;
+  const data = await fetch(`/api/network${f ? '?filter=' + encodeURIComponent(f) : ''}`).then(r => r.json()).catch(() => []);
   const tbody = document.getElementById('net-body');
   tbody.innerHTML = data.map(e => {
     const sc = e.status >= 500 ? 's5xx' : e.status >= 400 ? 's4xx' : e.status >= 300 ? 's3xx' : e.status >= 200 ? 's2xx' : 's0';
-    return `<tr onclick="useForReplay('${escAttr(e.url)}','${e.method||'GET'}')">
-      <td><span class="tag ${sc}">${e.method||'GET'}</span></td>
-      <td title="${escAttr(e.url)}">${e.url.slice(0,60)}${e.url.length>60?'…':''}</td>
-      <td><span class="tag ${sc}">${e.status||'?'}</span></td>
-      <td>${e.duration||0}ms</td>
+    return `<tr onclick="useForReplay('${escAttr(e.url)}','${e.method || 'GET'}')">
+      <td><span class="tag ${sc}">${e.method || 'GET'}</span></td>
+      <td title="${escAttr(e.url)}">${e.url.slice(0, 60)}${e.url.length > 60 ? '…' : ''}</td>
+      <td><span class="tag ${sc}">${e.status || '?'}</span></td>
+      <td>${e.duration || 0}ms</td>
       <td>${new Date(e.timestamp).toLocaleTimeString()}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:12px">No requests yet — enable Scanner and load a site</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:12px">No requests — enable Scanner and load a site</td></tr>';
 }
-async function clearNetwork() {
-  await fetch('/api/network', { method: 'DELETE' });
-  refreshNetwork();
-}
+async function clearNetwork() { await fetch('/api/network', { method: 'DELETE' }); refreshNetwork(); }
 
-// ── REDIRECTS ─────────────────────────────────────────────────────────────────
+// ── REDIRECTS ──────────────────────────────────────────────────────────────────
 async function refreshRedirects() {
-  const data = await fetch('/api/redirects').then(r=>r.json()).catch(()=>[]);
-  const el = document.getElementById('redirect-list');
+  const data = await fetch('/api/redirects').then(r => r.json()).catch(() => []);
+  const el   = document.getElementById('redirect-list');
   el.innerHTML = data.map(r => `
     <div style="margin-bottom:10px;padding:6px;background:var(--bg3);border-radius:6px;">
       <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${new Date(r.timestamp).toLocaleString()} — ${r.domain}</div>
@@ -676,32 +728,26 @@ async function refreshRedirects() {
     </div>
   `).join('') || '<div style="color:var(--muted);padding:12px;text-align:center">No redirects captured yet</div>';
 }
-async function clearRedirects() {
-  await fetch('/api/redirects', { method: 'DELETE' });
-  refreshRedirects();
-}
+async function clearRedirects() { await fetch('/api/redirects', { method: 'DELETE' }); refreshRedirects(); }
 
-// ── REPLAY ────────────────────────────────────────────────────────────────────
+// ── REPLAY ─────────────────────────────────────────────────────────────────────
 function useForReplay(url, method) {
-  document.getElementById('replay-url').value = url;
+  document.getElementById('replay-url').value  = url;
   document.getElementById('replay-method').value = method || 'GET';
   showTab('actions');
 }
 async function runReplay() {
-  const url = document.getElementById('replay-url').value.trim();
+  const url    = document.getElementById('replay-url').value.trim();
   const method = document.getElementById('replay-method').value;
-  const body = document.getElementById('replay-body').value.trim();
+  const body   = document.getElementById('replay-body').value.trim();
   if (!url) return;
   const result = document.getElementById('replay-result');
   result.style.display = 'block';
-  result.textContent = 'Running…';
+  result.textContent   = 'Running…';
   try {
     const payload = { url, method };
     if (body) payload.body = body;
-    const res = await fetch('/api/test/request', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
+    const res  = await fetch('/api/test/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await res.json();
     result.textContent = JSON.stringify(data, null, 2);
     logEvent('info', `Replay ${method} ${url} → ${data.status}`);
@@ -709,322 +755,405 @@ async function runReplay() {
     result.textContent = 'Error: ' + err.message;
   }
 }
-function openInNew() {
-  const url = document.getElementById('replay-url').value.trim();
-  if (url) window.open(url, '_blank');
-}
+function openInNew() { const url = document.getElementById('replay-url').value.trim(); if (url) window.open(url, '_blank'); }
 async function saveCurrentAsTest() {
-  const url = document.getElementById('replay-url').value.trim();
+  const url    = document.getElementById('replay-url').value.trim();
   const method = document.getElementById('replay-method').value;
   if (!url) return;
-  const name = prompt('Test name (e.g. "Daily Claim"):', '');
+  const name = prompt('Test name:', '');
   if (!name) return;
-  await fetch('/api/test/saved', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name, url, method })
-  });
+  await fetch('/api/test/saved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, url, method }) });
   logEvent('info', `Saved test: ${name}`);
   refreshSavedTests();
 }
 
-// ── SESSIONS ─────────────────────────────────────────────────────────────────
+// ── SESSIONS ───────────────────────────────────────────────────────────────────
 async function refreshSessions() {
-  const data = await fetch('/api/sessions').then(r=>r.json()).catch(()=>({}));
-  const el = document.getElementById('session-list');
+  const data    = await fetch('/api/sessions').then(r => r.json()).catch(() => ({}));
+  const el      = document.getElementById('session-list');
   const entries = Object.entries(data);
   if (!entries.length) {
-    el.innerHTML = '<div style="color:var(--muted);padding:12px;text-align:center">No sessions stored — log in to a site to save cookies</div>';
+    el.innerHTML = '<div style="color:var(--muted);padding:12px;text-align:center">No sessions stored</div>';
     return;
   }
   el.innerHTML = entries.map(([domain, info]) => `
     <div class="sess-row">
       <span class="sess-domain">${domain}</span>
-      <span class="sess-count">${info.count} cookie${info.count!==1?'s':''}</span>
-      <button class="btn btn-dark btn-sm" onclick="clearSession('${domain}')">🗑</button>
+      <span class="sess-count">${info.count} cookie${info.count !== 1 ? 's' : ''}</span>
+      <button class="btn btn-cyan btn-sm" onclick="openShareModal('${escAttr(domain)}')">🔗 Share</button>
+      <button class="btn btn-dark btn-sm" onclick="clearSession('${escAttr(domain)}')">🗑</button>
     </div>
   `).join('');
 }
-async function clearSession(domain) {
-  await fetch(`/api/sessions/${encodeURIComponent(domain)}`, { method: 'DELETE' });
-  refreshSessions();
-  refreshSessionStatus();
-}
+async function clearSession(domain) { await fetch(`/api/sessions/${encodeURIComponent(domain)}`, { method: 'DELETE' }); refreshSessions(); refreshSessionStatus(); }
 async function clearAllSessions() {
   if (!confirm('Clear ALL saved sessions?')) return;
   await fetch('/api/sessions', { method: 'DELETE' });
-  refreshSessions();
-  refreshSessionStatus();
+  refreshSessions(); refreshSessionStatus();
 }
 async function refreshSessionStatus() {
-  const data = await fetch('/api/session-status').then(r=>r.json()).catch(()=>({telegram:false,discord:false}));
-  const tg = document.getElementById('ss-tg');
-  const dc = document.getElementById('ss-dc');
-  if (tg) { tg.className = 'ss-dot ' + (data.telegram ? 'ss-active' : 'ss-none'); }
-  if (dc) { dc.className = 'ss-dot ' + (data.discord ? 'ss-active' : 'ss-none'); }
+  const data = await fetch('/api/session-status').then(r => r.json()).catch(() => ({ telegram: false, discord: false }));
+  const tg   = document.getElementById('ss-tg');
+  const dc   = document.getElementById('ss-dc');
+  if (tg) tg.className = 'ss-dot ' + (data.telegram ? 'ss-active' : 'ss-none');
+  if (dc) dc.className = 'ss-dot ' + (data.discord  ? 'ss-active' : 'ss-none');
+}
+async function addManualCookies() {
+  const domain = document.getElementById('manual-domain').value.trim();
+  const raw    = document.getElementById('manual-cookie').value.trim();
+  if (!domain || !raw) return;
+  const cookies = raw.split(';').map(p => {
+    const [name, ...rest] = p.trim().split('=');
+    return { name: name.trim(), value: rest.join('=').trim(), domain, saved: new Date().toISOString() };
+  }).filter(c => c.name);
+  await fetch(`/api/sessions/${encodeURIComponent(domain)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookies }) });
+  logEvent('info', `Added ${cookies.length} cookies for ${domain}`);
+  document.getElementById('manual-cookie').value = '';
+  refreshSessions(); refreshSessionStatus();
 }
 
-// ── SAVED TESTS ───────────────────────────────────────────────────────────────
+// ── SHARE LINKS ────────────────────────────────────────────────────────────────
+let _shareResultUrl = '';
+
+function openShareModal(prefillDomain) {
+  document.getElementById('share-result').style.display = 'none';
+  document.getElementById('share-error').style.display  = 'none';
+  if (prefillDomain) {
+    document.getElementById('share-domain').value     = prefillDomain;
+    document.getElementById('share-target-url').value = 'https://' + prefillDomain;
+    document.getElementById('share-label').value      = prefillDomain;
+  }
+  document.getElementById('share-modal').classList.add('show');
+}
+
+async function createShareLink() {
+  const domain    = document.getElementById('share-domain').value.trim();
+  const targetUrl = document.getElementById('share-target-url').value.trim();
+  const label     = document.getElementById('share-label').value.trim();
+  const ttl       = parseInt(document.getElementById('share-ttl').value) || 0;
+  const maxUses   = parseInt(document.getElementById('share-maxuses').value) || 0;
+  const errEl     = document.getElementById('share-error');
+  const resEl     = document.getElementById('share-result');
+  errEl.style.display = 'none'; resEl.style.display = 'none';
+
+  if (!domain || !targetUrl) { errEl.textContent = 'Domain and Target URL are required'; errEl.style.display = 'block'; return; }
+
+  try {
+    const res  = await fetch('/api/share/create', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain, targetUrl, label, ttlMinutes: ttl || null, maxUses: maxUses || null })
+    });
+    const data = await res.json();
+    if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+    _shareResultUrl = data.link;
+    document.getElementById('share-result-url').textContent = data.link;
+    resEl.style.display = 'block';
+    logEvent('share', `Share link created: ${data.link}`);
+    refreshShareLinks();
+  } catch (err) {
+    errEl.textContent = err.message; errEl.style.display = 'block';
+  }
+}
+
+function copyShareResultUrl() {
+  navigator.clipboard.writeText(_shareResultUrl).then(() => logEvent('share', 'Share link copied'));
+}
+
+async function refreshShareLinks() {
+  const data = await fetch('/api/share').then(r => r.json()).catch(() => []);
+  const el   = document.getElementById('share-list');
+  if (!data.length) {
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:12px">No share links yet — create one from the Sessions tab or the button above</div>';
+    return;
+  }
+  el.innerHTML = data.map(t => {
+    const isActive = t.active;
+    const rowClass = isActive ? 'share-row active-link' : 'share-row expired-link';
+    const statusBadge = isActive
+      ? `<span class="tag s2xx">ACTIVE</span>`
+      : `<span class="tag s0">EXPIRED</span>`;
+    const expiry = t.expiresAt
+      ? `Expires: ${new Date(t.expiresAt).toLocaleString()}`
+      : t.maxUses ? `Max uses: ${t.maxUses}` : 'No expiry';
+    return `
+    <div class="${rowClass}">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${statusBadge}
+        <span style="font-size:12px;font-weight:600">${escHtml(t.label || t.domain)}</span>
+        <span style="font-size:10px;color:var(--muted)">${escHtml(t.domain)}</span>
+      </div>
+      <div class="share-url">${escHtml(t.link)}</div>
+      <div class="share-meta">
+        ${expiry} · Uses: ${t.useCount}${t.maxUses ? '/' + t.maxUses : ''} · Created: ${new Date(t.createdAt).toLocaleString()}
+      </div>
+      <div class="share-actions">
+        <button class="btn btn-cyan btn-sm" onclick="copyText('${escAttr(t.link)}')">Copy</button>
+        <button class="btn btn-dark btn-sm" onclick="window.open('${escAttr(t.link)}','_blank')">Open</button>
+        ${isActive ? `<button class="btn btn-red btn-sm" onclick="revokeShareLink('${t.id}')">Revoke</button>` : ''}
+        <button class="btn btn-dark btn-sm" onclick="deleteShareLink('${t.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function revokeShareLink(id) {
+  await fetch(`/api/share/${id}/revoke`, { method: 'POST' });
+  logEvent('share', 'Share link revoked');
+  refreshShareLinks();
+}
+async function deleteShareLink(id) {
+  await fetch(`/api/share/${id}`, { method: 'DELETE' });
+  refreshShareLinks();
+}
+
+// ── SAVED TESTS ────────────────────────────────────────────────────────────────
 async function refreshSavedTests() {
-  const data = await fetch('/api/test/saved').then(r=>r.json()).catch(()=>[]);
-  const el = document.getElementById('saved-tests-list');
+  const data = await fetch('/api/test/saved').then(r => r.json()).catch(() => []);
+  const el   = document.getElementById('saved-tests-list');
   if (!data.length) {
     el.innerHTML = '<div style="color:var(--muted);padding:12px;text-align:center">No saved tests — use Actions tab to save a request</div>';
     return;
   }
   el.innerHTML = data.map(t => `
     <div class="test-row">
-      <span class="test-name">${t.name}</span>
-      <span class="test-url">${t.method} ${t.url}</span>
+      <span class="test-name">${escHtml(t.name)}</span>
+      <span class="test-url">${t.method} ${escHtml(t.url)}</span>
       <button class="btn btn-gold btn-sm" onclick="runSavedTest('${t.id}','${escAttr(t.url)}','${t.method}')">▶ Run</button>
       <button class="btn btn-dark btn-sm" onclick="copyText('${escAttr(t.url)}')">Copy</button>
       <button class="btn btn-red btn-sm" onclick="deleteSavedTest('${t.id}')">✕</button>
     </div>
   `).join('');
 }
-async function runSavedTest(id, url, method) {
-  useForReplay(url, method);
-  await runReplay();
-}
-async function deleteSavedTest(id) {
-  await fetch(`/api/test/saved/${id}`, { method: 'DELETE' });
-  refreshSavedTests();
-}
+async function runSavedTest(id, url, method) { useForReplay(url, method); await runReplay(); }
+async function deleteSavedTest(id) { await fetch(`/api/test/saved/${id}`, { method: 'DELETE' }); refreshSavedTests(); }
 
-// ── LOGS ─────────────────────────────────────────────────────────────────────
-const CLICK_KEYWORDS = ['claim','reward','daily','bonus','gold','coins','free','spin','prize'];
+// ── LOGS ───────────────────────────────────────────────────────────────────────
 function logEvent(type, msg) {
   const list = document.getElementById('log-list');
-  const ts = new Date().toLocaleTimeString();
-  const kw = CLICK_KEYWORDS.find(k => msg.toLowerCase().includes(k));
-  const cls = kw ? `log-${kw}` : `log-${type}`;
-  list.insertAdjacentHTML('afterbegin', `<div class="log-entry ${cls}">[${ts}] ${msg}</div>`);
+  const ts   = new Date().toLocaleTimeString();
+  list.insertAdjacentHTML('afterbegin', `<div class="log-entry log-${type}">[${ts}] ${escHtml(msg)}</div>`);
 }
 
-// intercept console from iframe
-try {
-  iframe.addEventListener('load', () => {
-    try {
-      const doc = iframe.contentDocument;
-      if (!doc) return;
-      // inject click logger into iframe
-      const script = doc.createElement('script');
-      script.textContent = `
-        document.addEventListener('click', e => {
-          const t = e.target;
-          const text = (t.innerText||t.value||t.getAttribute('aria-label')||'').toLowerCase();
-          const keywords = ['claim','reward','daily','bonus','gold','coins','free','spin','prize'];
-          const hit = keywords.find(k => text.includes(k));
-          if (hit) {
-            fetch('/api/log-click', {method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({keyword:hit,text:t.innerText||t.value,url:location.href})
-            }).catch(()=>{});
-          }
-        }, true);
-      `;
-      doc.head.appendChild(script);
-    } catch {}
-  });
-} catch {}
-
-// ── CLICK LOG ENDPOINT ────────────────────────────────────────────────────────
-// handled server-side, but we also show in UI via polling
-// (server.js exposes /api/log-click which we add below via fetch intercept)
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function escAttr(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
-function copyText(t) { navigator.clipboard.writeText(t).then(()=>logEvent('info','Copied: '+t)); }
-
-// ── TELEGRAM MODAL ───────────────────────────────────────────────────────────
+// ── TELEGRAM ───────────────────────────────────────────────────────────────────
 function openTgModal() {
   document.getElementById('tg-modal').classList.add('show');
   updateTgModal();
 }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 async function updateTgModal() {
-  const t = await fetch('/api/tunnel').then(r=>r.json()).catch(()=>({active:false,url:null}));
-  const tgStatus = document.getElementById('tg-tunnel-status');
-  const urlDisplay = document.getElementById('tg-url-display');
-  const step1 = document.getElementById('tg-step-1');
-  const step2 = document.getElementById('tg-step-2');
-  if (t.active && t.url) {
-    tgStatus.style.color = 'var(--green)';
-    tgStatus.textContent = '✓ Tunnel active: ' + t.url;
-    urlDisplay.textContent = t.url;
-    step1.classList.add('done'); step1.classList.remove('active');
-    step2.classList.add('active');
-  } else {
-    tgStatus.style.color = 'var(--red)';
-    tgStatus.textContent = '✗ Tunnel offline — tap Start Tunnel';
-    urlDisplay.textContent = '— start tunnel first —';
-    step1.classList.add('active'); step1.classList.remove('done');
-  }
-  const sess = await fetch('/api/session-status').then(r=>r.json()).catch(()=>({telegram:false}));
-  const step3 = document.getElementById('tg-step-3');
-  const step4 = document.getElementById('tg-step-4');
-  const sessStatus = document.getElementById('tg-session-status');
+  const sess    = await fetch('/api/session-status').then(r => r.json()).catch(() => ({ telegram: false }));
+  const step3   = document.getElementById('tg-step-3');
+  const sessEl  = document.getElementById('tg-session-status');
   if (sess.telegram) {
-    step3.classList.add('done'); step4.classList.add('done'); step4.classList.add('active');
-    sessStatus.style.color = 'var(--green)';
-    sessStatus.textContent = '✓ Telegram session is saved and active';
+    step3.classList.add('done', 'active');
+    sessEl.style.color = 'var(--green)';
+    sessEl.textContent = '✓ Telegram session is saved and active';
   } else {
-    step3.classList.add('active');
-    sessStatus.style.color = 'var(--muted)';
-    sessStatus.textContent = 'No session yet — complete step 3';
+    step3.classList.remove('done', 'active');
+    sessEl.style.color = 'var(--muted)';
+    sessEl.textContent = 'No session yet — complete step 1';
   }
 }
-async function tgEnsureTunnel() {
-  const tgStatus = document.getElementById('tg-tunnel-status');
-  tgStatus.textContent = 'Starting tunnel…'; tgStatus.style.color = 'var(--gold)';
-  await fetch('/api/tunnel/start', { method: 'POST' });
-  setTimeout(updateTgModal, 2500);
-}
-function tgOpenViaProxy() {
-  const url = document.getElementById('tg-url-display').textContent;
-  if (!url || url.includes('—')) { alert('Start the tunnel first (Step 1)'); return; }
-  openExternal('https://web.telegram.org/k/');
-  logEvent('info', 'Telegram Web opened — log in to save session');
+function tgLoadViaProxy() {
+  closeModal('tg-modal');
+  quickLoad('https://web.telegram.org/k/');
+  logEvent('info', 'Loading Telegram Web via proxy — log in to save session');
 }
 
-// ── CLAUDE CLI STATUS ─────────────────────────────────────────────────────────
+// ── DISCORD ────────────────────────────────────────────────────────────────────
+function openDcModal() {
+  document.getElementById('dc-modal').classList.add('show');
+  updateDcModal();
+}
+async function updateDcModal() {
+  const sess   = await fetch('/api/session-status').then(r => r.json()).catch(() => ({ discord: false }));
+  const step3  = document.getElementById('dc-step-3');
+  const sessEl = document.getElementById('dc-session-status');
+  if (sess.discord) {
+    step3.classList.add('done', 'active');
+    sessEl.style.color = 'var(--green)';
+    sessEl.textContent = '✓ Discord session is saved and active';
+  } else {
+    step3.classList.remove('done', 'active');
+    sessEl.style.color = 'var(--muted)';
+    sessEl.textContent = 'No session yet — complete step 1';
+  }
+}
+function dcLoadViaProxy() {
+  closeModal('dc-modal');
+  quickLoad('https://discord.com/login');
+  logEvent('info', 'Loading Discord via proxy — log in to save session');
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── CLAUDE ─────────────────────────────────────────────────────────────────────
 async function refreshClaudeStatus() {
-  const bridge = await fetch('/api/claude/bridge-status').then(r=>r.json()).catch(()=>({connected:false}));
-  const btn = document.getElementById('bridge-toggle-btn');
-  if (btn) btn.textContent = bridge.connected ? 'Stop Bridge' : 'Bridge Offline';
-  const data = bridge.connected ? { online: true, hasKey: true, model: bridge.model || 'claude-sonnet-4-6', source: 'VPS Bridge' }
-    : await fetch('/api/claude/status').then(r=>r.json()).catch(()=>({online:false}));
-  const dot = document.getElementById('claude-dot');
+  const data = await fetch('/api/claude/status').then(r => r.json()).catch(() => ({ online: false }));
+
+  const dot    = document.getElementById('claude-dot');
   const dotBar = document.getElementById('claude-status-dot');
-  const label = document.getElementById('claude-status-label');
-  const text = document.getElementById('claude-status-text');
-  if (data.online) {
-    [dot, dotBar].forEach(d => { if(d){d.className='online'; d.style.background='var(--green)'; d.style.boxShadow='0 0 6px var(--green)'; }});
-    if(label) label.style.color = 'var(--green)';
-    if(label) label.textContent = 'Claude CLI: online';
-    if(text) text.textContent = `Claude online — ${data.source||'local'} | model: ${data.model||'claude'} | key: ${data.hasKey?'✓':'✗'}`;
-    if(text) text.style.color = 'var(--green)';
-  } else {
-    [dot, dotBar].forEach(d => { if(d){d.style.background='var(--muted)'; d.style.boxShadow='none'; }});
-    if(label) label.style.color = 'var(--muted)';
-    if(label) label.textContent = 'Claude CLI: offline';
-    if(text) { text.textContent = data.hasKey ? 'API key saved — ready to chat' : 'Add your Anthropic API key above to enable chat'; text.style.color='var(--muted)'; }
+  const label  = document.getElementById('claude-status-label');
+  const text   = document.getElementById('claude-status-text');
+  const btn    = document.getElementById('claude-toggle-btn');
+
+  const isOnline = data.online;
+  const isActive = data.active;
+
+  [dot, dotBar].forEach(d => {
+    if (!d) return;
+    if (isOnline)      { d.style.background = 'var(--green)'; d.style.boxShadow = '0 0 6px var(--green)'; }
+    else if (isActive) { d.style.background = 'var(--gold)';  d.style.boxShadow = '0 0 6px var(--gold)'; }
+    else               { d.style.background = 'var(--muted)'; d.style.boxShadow = 'none'; }
+  });
+
+  if (label) {
+    label.style.color = isOnline ? 'var(--green)' : (isActive ? 'var(--gold)' : 'var(--muted)');
+    label.textContent = isOnline ? 'Claude: online' : (isActive ? 'Claude: no key' : 'Claude: paused');
   }
-  if (document.getElementById('api-key-input') && data.hasKey) {
-    document.getElementById('api-key-input').placeholder = 'API key saved ✓ (enter new to replace)';
+  if (text) {
+    const mode = data.cliAvailable ? `CLI Pro (${data.cliBin?.split('/').pop()})` : (data.hasKey ? 'API key' : 'no auth');
+    text.textContent = isOnline ? `${mode} · ${data.historyCount || 0} msgs history` : (isActive ? `Active but: ${mode} unavailable` : 'Deactivated');
+    text.style.color  = isOnline ? 'var(--green)' : 'var(--muted)';
   }
+  if (btn) btn.textContent = isActive ? 'Deactivate' : 'Activate';
 }
 
-// ── CLAUDE BRIDGE ────────────────────────────────────────────────────────────
-async function saveBridge() {
-  const vpsUrl = document.getElementById('vps-url-input').value.trim();
-  const token = document.getElementById('vps-token-input').value.trim();
-  if (!vpsUrl) return;
-  await fetch('/api/claude/set-bridge', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ vpsUrl, token })
-  });
-  logEvent('info', 'VPS bridge saved: ' + vpsUrl);
-  document.getElementById('vps-url-input').value = '';
-  document.getElementById('vps-token-input').value = '';
+async function toggleClaude() {
+  const data = await fetch('/api/claude/status').then(r => r.json()).catch(() => ({ active: true }));
+  const endpoint = data.active ? '/api/claude/deactivate' : '/api/claude/activate';
+  await fetch(endpoint, { method: 'POST' });
   refreshClaudeStatus();
 }
-async function toggleBridge() {
-  const btn = document.getElementById('bridge-toggle-btn');
-  btn.textContent = '…';
-  const data = await fetch('/api/claude/bridge-status').then(r=>r.json()).catch(()=>({connected:false}));
-  if (data.connected) {
-    await fetch('/api/claude/bridge-toggle', { method: 'POST' });
-    logEvent('info', 'Bridge stop signal sent — pm2 will restart it automatically unless you run pm2 stop claude-bridge on VPS');
-    btn.textContent = 'Stopped';
-  } else {
-    logEvent('info', 'Bridge is offline. Start it on VPS: pm2 start claude-bridge');
-    btn.textContent = 'Offline';
-  }
-  setTimeout(refreshClaudeStatus, 3000);
-}
 
-// ── CLAUDE CHAT ───────────────────────────────────────────────────────────────
 function saveApiKey() {
   const key = document.getElementById('api-key-input').value.trim();
   if (!key) return;
-  fetch('/api/claude/set-key', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key}) })
-    .then(()=>{ logEvent('info','API key saved'); document.getElementById('api-key-input').value=''; refreshClaudeStatus(); });
+  fetch('/api/claude/set-key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) })
+    .then(() => { logEvent('info', 'API key saved'); document.getElementById('api-key-input').value = ''; refreshClaudeStatus(); });
 }
+
+async function clearChatHistory() {
+  await fetch('/api/claude/clear', { method: 'POST' });
+  document.getElementById('chat-messages').innerHTML = '';
+  logEvent('info', 'Chat history cleared');
+  refreshClaudeStatus();
+}
+
+async function saveTgBot() {
+  const botUsername = document.getElementById('tg-bot-username').value.trim();
+  const botToken    = document.getElementById('tg-bot-token').value.trim();
+  if (!botUsername) return;
+  await fetch('/api/claude/set-tg-bot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ botUsername, botToken }) });
+  logEvent('info', 'Telegram bot saved: @' + botUsername);
+  document.getElementById('tg-bot-username').value = '';
+  document.getElementById('tg-bot-token').value = '';
+}
+
+async function refreshTgAuth() {
+  const data = await fetch('/api/tg-auth').then(r => r.json()).catch(() => null);
+  const bar  = document.getElementById('tg-auth-bar');
+  const user = document.getElementById('tg-auth-user');
+  if (data && data.id) {
+    bar.style.display  = 'flex';
+    user.textContent   = `${data.first_name || ''} ${data.last_name || ''} (@${data.username || data.id})`;
+  } else {
+    bar.style.display  = 'none';
+  }
+}
+
+async function clearTgAuth() {
+  await fetch('/api/tg-auth', { method: 'DELETE' });
+  refreshTgAuth();
+  logEvent('info', 'Telegram auth cleared');
+}
+
+function openTgWidgetLogin() {
+  window.open('/tg-login', '_blank', 'width=420,height=500');
+}
+
 function appendChat(role, text) {
-  const el = document.getElementById('chat-messages');
+  const el  = document.getElementById('chat-messages');
   const div = document.createElement('div');
-  div.className = 'chat-msg ' + role;
+  div.className  = 'chat-msg ' + role;
   div.textContent = text;
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
 }
+
 async function sendChat() {
   const input = document.getElementById('chat-input');
-  const msg = input.value.trim();
+  const msg   = input.value.trim();
   if (!msg) return;
   input.value = '';
   appendChat('user', msg);
   appendChat('claude', '…thinking…');
-  const msgs = document.querySelectorAll('#chat-messages .chat-msg');
+  const msgs    = document.querySelectorAll('#chat-messages .chat-msg');
   const thinking = msgs[msgs.length - 1];
   try {
-    const res = await fetch('/api/claude/chat', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ message: msg, context: { tunnelUrl: document.getElementById('tunnel-url').textContent, currentUrl } })
-    });
+    const res  = await fetch('/api/claude/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, context: { currentUrl } }) });
     const data = await res.json();
     if (data.error) { thinking.className = 'chat-msg error'; thinking.textContent = 'Error: ' + data.error; }
-    else { thinking.className = 'chat-msg claude'; thinking.textContent = data.reply; }
-  } catch(err) {
+    else            { thinking.className = 'chat-msg claude'; thinking.textContent = data.reply; }
+  } catch (err) {
     thinking.className = 'chat-msg error'; thinking.textContent = 'Network error: ' + err.message;
   }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
   const ci = document.getElementById('chat-input');
-  if (ci) ci.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }});
+  if (ci) ci.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } });
 });
 
-// ── TUNNEL ────────────────────────────────────────────────────────────────────
-async function refreshTunnel() {
-  const data = await fetch('/api/tunnel').then(r=>r.json()).catch(()=>({active:false,url:null}));
-  const urlEl = document.getElementById('tunnel-url');
-  const dot = document.getElementById('tunnel-dot');
-  const btn = document.getElementById('tunnel-toggle');
-  if (data.active && data.url) {
-    urlEl.textContent = data.url;
-    urlEl.style.color = 'var(--green)';
-    dot.style.background = 'var(--green)';
-    dot.style.boxShadow = '0 0 6px var(--green)';
-    btn.textContent = 'Stop';
-  } else {
-    urlEl.textContent = 'offline';
-    urlEl.style.color = 'var(--muted)';
-    dot.style.background = 'var(--muted)';
-    dot.style.boxShadow = 'none';
-    btn.textContent = 'Start';
-  }
-}
-async function toggleTunnel() {
-  const data = await fetch('/api/tunnel').then(r=>r.json()).catch(()=>({active:false}));
-  const endpoint = data.active ? '/api/tunnel/stop' : '/api/tunnel/start';
-  document.getElementById('tunnel-url').textContent = 'working...';
-  await fetch(endpoint, { method: 'POST' });
-  setTimeout(refreshTunnel, 2000);
-}
-function copyTunnelUrl() {
-  const url = document.getElementById('tunnel-url').textContent;
-  if (url && url !== 'offline' && url !== 'starting...' && url !== 'working...') {
-    navigator.clipboard.writeText(url).then(() => logEvent('info', 'Tunnel URL copied: ' + url));
-  }
+// ── ADMIN ──────────────────────────────────────────────────────────────────────
+async function loadAdminInfo() {
+  // The admin login URL is shown in the chat panel admin section
+  // We construct it from window.location
+  const base = window.location.origin;
+  // Try to get from server
+  try {
+    const cfg = await fetch('/api/admin/reset-token', { method: 'POST' }).then(r => r.json()).catch(() => null);
+    // We don't want to reset on load - just show current. Use a GET approach:
+    // Actually let's just show the base URL and note to check server console
+    document.getElementById('admin-login-url').textContent = `${base}/auth?token=<see server console>`;
+  } catch {}
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+async function copyAdminUrl() {
+  const url = document.getElementById('admin-login-url').textContent;
+  navigator.clipboard.writeText(url).then(() => logEvent('info', 'Admin URL copied'));
+}
+
+async function resetAdminToken() {
+  if (!confirm('Reset admin token? Your current login session will remain valid until it expires.')) return;
+  const data = await fetch('/api/admin/reset-token', { method: 'POST' }).then(r => r.json());
+  document.getElementById('admin-login-url').textContent = data.loginUrl;
+  logEvent('info', 'Admin token reset. New login URL copied.');
+  navigator.clipboard.writeText(data.loginUrl).catch(() => {});
+}
+
+// Load admin info when admin section is opened
+document.querySelector('[onclick*="admin-info"]').addEventListener('click', async () => {
+  const el = document.getElementById('admin-login-url');
+  if (el.textContent === 'Loading...') {
+    const data = await fetch('/api/admin/info').then(r => r.json()).catch(() => null);
+    if (data) el.textContent = data.loginUrl;
+  }
+});
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function escAttr(s) { return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function copyText(t) { navigator.clipboard.writeText(t).then(() => logEvent('info', 'Copied: ' + t)); }
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
 refreshSessionStatus();
-refreshTunnel();
 refreshClaudeStatus();
+refreshTgAuth();
 setInterval(refreshSessionStatus, 15000);
-setInterval(refreshTunnel, 10000);
 setInterval(refreshClaudeStatus, 20000);
-fetch('/api/scanner').then(r=>r.json()).then(d=>{ scannerOn=d.active; updateScannerUI(); }).catch(()=>{});
+setInterval(refreshTgAuth, 30000);
+fetch('/api/scanner').then(r => r.json()).then(d => { scannerOn = d.active; updateScannerUI(); }).catch(() => {});
 </script>
 </body>
 </html>
