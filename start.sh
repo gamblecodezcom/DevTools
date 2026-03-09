@@ -6,6 +6,7 @@
 export PORT=3002
 export SKIP_TUNNEL=1
 export PUBLIC_BASE="https://bot.gamblecodez.com/dev"
+export NODE_NO_WARNINGS=1   # suppress DEP0040 punycode (node-fetch / Node v22)
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"

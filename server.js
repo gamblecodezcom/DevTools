@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+
 const express      = require('express');
 const session      = require('express-session');
 const cors         = require('cors');
@@ -153,7 +154,12 @@ app.use(session({
   secret: adminCfg.sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 },
+  cookie: {
+    secure: 'auto',   // auto-detects HTTPS via trust proxy
+    httpOnly: true,
+    sameSite: 'lax',  // allows cookie after redirect
+    maxAge: 14 * 24 * 60 * 60 * 1000,
+  },
 }));
 
 function requireAdmin(req, res, next) {
@@ -167,34 +173,61 @@ function adminLoginPage(redirectTo) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GCZ DevTools — Auth Required</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#ffd700">
+<title>GCZ DevTools</title>
+<link rel="manifest" href="${BASE}/manifest.json">
+<link rel="apple-touch-icon" href="${BASE}/icons/icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0f;color:#e0e0f0;font-family:system-ui,sans-serif;
-     display:flex;align-items:center;justify-content:center;height:100vh}
+     display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:0}
+#install-bar{display:none;width:100%;padding:8px 16px;background:linear-gradient(90deg,#1a1500,#1a1a00);
+     border-bottom:1px solid #ffd700;font-size:12px;align-items:center;justify-content:space-between}
+#install-bar.show{display:flex}
 .box{background:#111118;border:1px solid #ffd700;border-radius:14px;
      padding:32px 28px;width:min(90vw,380px);text-align:center}
-h1{color:#ffd700;font-size:18px;margin-bottom:8px}
-p{color:#6060a0;font-size:12px;margin-bottom:20px}
-input{width:100%;padding:10px;background:#1a1a26;border:1px solid #2a2a3a;
-      border-radius:8px;color:#e0e0f0;font-size:14px;margin-bottom:12px;outline:none}
+h1{color:#ffd700;font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:1px}
+.sub{color:#00e5ff;font-size:12px;margin-bottom:20px}
+input{width:100%;padding:11px;background:#1a1a26;border:1px solid #2a2a3a;
+      border-radius:8px;color:#e0e0f0;font-size:15px;margin-bottom:12px;outline:none;text-align:center;letter-spacing:3px}
 input:focus{border-color:#00e5ff}
-button{width:100%;padding:11px;background:#ffd700;color:#000;border:none;
+button{width:100%;padding:12px;background:#ffd700;color:#000;border:none;
        border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
-.err{color:#ff4466;font-size:12px;margin-top:8px;display:none}
+#install-btn{background:#ffd700;color:#000;border:none;border-radius:6px;padding:5px 12px;font-weight:700;cursor:pointer;font-size:12px}
 </style>
 </head>
 <body>
+<div id="install-bar">
+  <span>⚡ Install GCZ DevTools as home screen app</span>
+  <button id="install-btn">Install</button>
+</div>
 <div class="box">
-  <h1>GCZ DevTools</h1>
-  <p>Admin authentication required</p>
-  <form method="GET" action="/auth">
-    <input type="hidden" name="redirect" value="${redirectTo}">
-    <input type="password" name="token" placeholder="Admin token" autofocus>
-    <button type="submit">Unlock</button>
+  <h1>🎰 GCZ</h1>
+  <div class="sub">DEVTOOLS — Admin Access</div>
+  <form method="GET" action="${BASE}/auth">
+    <input type="hidden" name="redirect" value="${BASE}/">
+    <input type="password" name="token" placeholder="Token" autofocus autocomplete="off">
+    <button type="submit">Unlock DevTools</button>
   </form>
 </div>
+<script>
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('install-bar').classList.add('show');
+});
+document.getElementById('install-btn').onclick = () => {
+  if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; }
+  document.getElementById('install-bar').classList.remove('show');
+};
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('${BASE}/sw.js').catch(()=>{});
+</script>
 </body>
 </html>`;
 }
@@ -205,9 +238,10 @@ app.get('/auth', (req, res) => {
   const { token, redirect: redir } = req.query;
   if (token === cfg.adminToken) {
     req.session.admin = true;
-    return res.redirect(redir || '/');
+    // Use absolute URL so redirect works correctly behind the /dev/ nginx prefix
+    return res.redirect(redir || (BASE + '/'));
   }
-  res.status(403).send(adminLoginPage(redir || '/'));
+  res.status(403).send(adminLoginPage(redir || (BASE + '/')));
 });
 
 // ─── Static files (public — must come before admin middleware) ────────────────
@@ -219,8 +253,9 @@ app.get('/icons/icon-:size.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
   res.send(makePng(safe));
 });
-app.get('/manifest.json',    requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public/manifest.json')));
-app.get('/sw.js',            requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public/sw.js')));
+// PWA files must be public — Chrome needs them to trigger install prompt even on auth page
+app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'public/manifest.json')));
+app.get('/sw.js',         (req, res) => res.sendFile(path.join(__dirname, 'public/sw.js')));
 
 // ─── DevTools UI (admin only) ─────────────────────────────────────────────────
 app.get('/', requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
