@@ -184,6 +184,76 @@ tr:hover td { background: var(--bg3); }
 #replay-url   { width: 100%; margin-bottom: 6px; }
 #replay-body  { width: 100%; min-height: 60px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 11px; padding: 6px; font-family: monospace; resize: vertical; }
 #replay-result{ margin-top: 8px; background: var(--bg3); border-radius: var(--radius); padding: 8px; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 160px; overflow-y: auto; color: var(--green); display: none; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.85); align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--gold);
+  border-radius: 14px; padding: 0; width: min(92vw, 480px);
+  max-height: 88vh; overflow-y: auto; box-shadow: 0 0 40px rgba(255,215,0,.15);
+}
+.modal-head {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h2 { font-size: 15px; color: var(--gold); }
+.modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 0 4px; }
+.modal-body { padding: 16px 20px; }
+.step {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px; margin-bottom: 10px;
+  background: var(--bg3); border-radius: 10px; border: 1px solid var(--border);
+  transition: border-color .2s;
+}
+.step.done { border-color: var(--green); }
+.step.active { border-color: var(--gold); }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; background: var(--border); color: var(--muted);
+}
+.step.done .step-num { background: var(--green); color: #000; }
+.step.active .step-num { background: var(--gold); color: #000; }
+.step-content h3 { font-size: 13px; margin-bottom: 4px; color: var(--text); }
+.step-content p  { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.step-content code { background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--cyan); font-size: 11px; }
+.step-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── CHAT PANEL ── */
+#chat-wrap { display: flex; flex-direction: column; height: 100%; }
+#chat-status-bar {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid var(--border); margin-bottom: 6px;
+}
+#claude-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+#claude-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+#chat-messages {
+  flex: 1; overflow-y: auto; padding: 4px 0; display: flex;
+  flex-direction: column; gap: 8px; max-height: 160px;
+}
+.chat-msg { padding: 8px 10px; border-radius: 10px; font-size: 12px; line-height: 1.5; max-width: 90%; white-space: pre-wrap; word-break: break-word; }
+.chat-msg.user { background: #1a2a1a; color: var(--green); align-self: flex-end; border: 1px solid #2a4a2a; }
+.chat-msg.claude { background: var(--bg3); color: var(--text); align-self: flex-start; border: 1px solid var(--border); }
+.chat-msg.error { background: #2a0a0a; color: var(--red); align-self: flex-start; }
+#chat-input-row { display: flex; gap: 6px; margin-top: 6px; }
+#chat-input {
+  flex: 1; padding: 7px 10px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-size: 12px; resize: none;
+  min-height: 36px; max-height: 80px; font-family: inherit;
+}
+#chat-input:focus { border-color: var(--cyan); outline: none; }
+#api-key-row {
+  display: flex; gap: 6px; margin-bottom: 8px; align-items: center;
+}
+#api-key-input {
+  flex: 1; padding: 5px 8px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-size: 11px; font-family: monospace;
+}
 </style>
 </head>
 <body>
@@ -210,19 +280,95 @@ tr:hover td { background: var(--bg3); }
   </div>
 </div>
 
+<!-- TUNNEL BAR -->
+<div id="tunnel-bar" style="display:flex;align-items:center;gap:8px;padding:5px 10px;background:#0d0d18;border-bottom:1px solid var(--border);font-size:11px;flex-wrap:wrap;">
+  <span style="color:var(--muted)">🌐</span>
+  <span id="tunnel-url" style="color:var(--muted);font-family:monospace">starting...</span>
+  <button class="btn btn-dark btn-sm" onclick="copyTunnelUrl()">Copy</button>
+  <button class="btn btn-dark btn-sm" id="tunnel-toggle" onclick="toggleTunnel()">Stop</button>
+  <span id="tunnel-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+    <span id="claude-status-label" style="font-size:11px;color:var(--muted)">Claude CLI: —</span>
+    <span id="claude-status-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span>
+    <button class="btn btn-dark btn-sm" onclick="showTab('chat')" style="border-color:var(--cyan);color:var(--cyan)">💬 Chat</button>
+  </span>
+</div>
+
+<!-- TELEGRAM SETUP MODAL -->
+<div class="modal-overlay" id="tg-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>✈ Telegram Login Setup</h2>
+      <button class="modal-close" onclick="closeModal('tg-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Telegram's login widget requires a registered public HTTPS domain. Follow these steps once, then your session will persist automatically.</p>
+
+      <div class="step active" id="tg-step-1">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Start Public Tunnel</h3>
+          <p>Your tunnel must be running so Telegram can reach it.</p>
+          <div id="tg-tunnel-status" style="margin-top:6px;font-size:11px;color:var(--muted)">Checking tunnel...</div>
+          <div class="step-actions">
+            <button class="btn btn-gold btn-sm" onclick="tgEnsureTunnel()">Start Tunnel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="tg-step-2">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Register Domain with @BotFather</h3>
+          <p>Open Telegram → search <code>@BotFather</code> → send <code>/setdomain</code> → select your bot → paste your tunnel URL below.</p>
+          <div id="tg-url-display" style="margin:8px 0;padding:6px 10px;background:var(--bg);border-radius:6px;font-family:monospace;font-size:11px;color:var(--cyan);word-break:break-all">—</div>
+          <div class="step-actions">
+            <button class="btn btn-cyan btn-sm" onclick="copyTunnelUrl();logEvent('info','Tunnel URL copied for BotFather')">Copy URL</button>
+            <button class="btn btn-dark btn-sm" onclick="openExternal('https://t.me/botfather')">Open @BotFather</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="tg-step-3">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Open Telegram Web &amp; Login</h3>
+          <p>This opens Telegram Web via your tunnel URL so cookies are saved under the correct domain. Login with your phone number.</p>
+          <div class="step-actions">
+            <button class="btn btn-gold btn-sm" onclick="tgOpenViaProxy()">Open Telegram Web</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" id="tg-step-4">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Session Saved ✓</h3>
+          <p>After logging in, your Telegram session cookies are stored locally. Future visits will auto-restore your session — including for Claude CLI bot testing.</p>
+          <div id="tg-session-status" style="margin-top:6px;font-size:11px;color:var(--muted)">Checking session...</div>
+          <div class="step-actions">
+            <button class="btn btn-green btn-sm" onclick="refreshSessionStatus();updateTgModal()">Check Session</button>
+            <button class="btn btn-dark btn-sm" onclick="closeModal('tg-modal')">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- QUICK TARGETS -->
 <div id="quick-bar">
-  <span class="qtag qtag-tg" onclick="quickLoad('https://web.telegram.org/k/')">
+  <span class="qtag qtag-tg" onclick="openTgModal()">
     ✈ Telegram<span class="ss-dot ss-none" id="ss-tg"></span>
   </span>
-  <span class="qtag qtag-dc" onclick="quickLoad('https://discord.com/app')">
+  <span class="qtag qtag-dc" onclick="openExternal('https://discord.com/app')">
     🎮 Discord<span class="ss-dot ss-none" id="ss-dc"></span>
   </span>
   <span class="qtag qtag-gg" onclick="quickLoad('https://accounts.google.com')">
     G Google Login
   </span>
-  <span class="qtag qtag-gc" onclick="quickLoad('https://gamble-codez.com')">
-    🎰 gamble-codez.com
+  <span class="qtag qtag-gc" onclick="quickLoad('https://gamblecodez.com')">
+    🎰 gamblecodez.com
   </span>
   <span class="qtag qtag-gc" onclick="document.getElementById('urlbar').focus()" style="border-color:var(--muted);color:var(--muted)">
     + Custom URL
@@ -251,6 +397,7 @@ tr:hover td { background: var(--bg3); }
       <div class="ptab" onclick="showTab('sessions')">Sessions</div>
       <div class="ptab" onclick="showTab('saved')">Saved Tests</div>
       <div class="ptab" onclick="showTab('logs')">Logs</div>
+      <div class="ptab" onclick="showTab('chat')" style="color:var(--cyan)">💬 Claude</div>
     </div>
     <div id="panel-content">
 
@@ -311,6 +458,34 @@ tr:hover td { background: var(--bg3); }
         <div id="saved-tests-list"></div>
       </div>
 
+      <!-- CLAUDE CHAT -->
+      <div class="pane" id="pane-chat">
+        <div id="chat-wrap">
+          <div id="chat-status-bar">
+            <span id="claude-dot"></span>
+            <span id="claude-status-text" style="font-size:11px;color:var(--muted)">Checking Claude CLI…</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--muted)">Uses your Anthropic API key</span>
+          </div>
+          <div id="api-key-row" style="flex-direction:column;gap:4px">
+            <div style="display:flex;gap:4px">
+              <input id="vps-url-input" class="filter-input" placeholder="VPS Bridge URL: https://gamble-codez.com:4000" style="flex:2">
+              <input id="vps-token-input" class="filter-input" type="password" placeholder="Bridge token" style="flex:1">
+              <button class="btn btn-cyan btn-sm" onclick="saveBridge()">Save</button>
+              <button class="btn btn-dark btn-sm" id="bridge-toggle-btn" onclick="toggleBridge()">Stop</button>
+            </div>
+            <div style="display:flex;gap:4px">
+              <input id="api-key-input" class="filter-input" type="password" placeholder="Or: sk-ant-... local Anthropic API key (fallback)">
+              <button class="btn btn-dark btn-sm" onclick="saveApiKey()">Save</button>
+            </div>
+          </div>
+          <div id="chat-messages"></div>
+          <div id="chat-input-row">
+            <textarea id="chat-input" placeholder="Ask Claude anything about your code, bots, sessions…" rows="2"></textarea>
+            <button class="btn btn-cyan btn-sm" onclick="sendChat()" style="align-self:flex-end">Send</button>
+          </div>
+        </div>
+      </div>
+
       <!-- LOGS -->
       <div class="pane" id="pane-logs">
         <div class="filter-row">
@@ -353,6 +528,11 @@ document.getElementById('install-btn').onclick = () => {
 document.getElementById('urlbar').addEventListener('keydown', e => {
   if (e.key === 'Enter') loadSite();
 });
+
+function openExternal(url) {
+  window.open(url, '_blank');
+  logEvent('info', 'Opened external: ' + url);
+}
 
 function normalizeUrl(url) {
   url = url.trim();
@@ -654,9 +834,196 @@ try {
 function escAttr(s) { return String(s).replace(/'/g,"&#39;").replace(/"/g,'&quot;'); }
 function copyText(t) { navigator.clipboard.writeText(t).then(()=>logEvent('info','Copied: '+t)); }
 
+// ── TELEGRAM MODAL ───────────────────────────────────────────────────────────
+function openTgModal() {
+  document.getElementById('tg-modal').classList.add('show');
+  updateTgModal();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+async function updateTgModal() {
+  const t = await fetch('/api/tunnel').then(r=>r.json()).catch(()=>({active:false,url:null}));
+  const tgStatus = document.getElementById('tg-tunnel-status');
+  const urlDisplay = document.getElementById('tg-url-display');
+  const step1 = document.getElementById('tg-step-1');
+  const step2 = document.getElementById('tg-step-2');
+  if (t.active && t.url) {
+    tgStatus.style.color = 'var(--green)';
+    tgStatus.textContent = '✓ Tunnel active: ' + t.url;
+    urlDisplay.textContent = t.url;
+    step1.classList.add('done'); step1.classList.remove('active');
+    step2.classList.add('active');
+  } else {
+    tgStatus.style.color = 'var(--red)';
+    tgStatus.textContent = '✗ Tunnel offline — tap Start Tunnel';
+    urlDisplay.textContent = '— start tunnel first —';
+    step1.classList.add('active'); step1.classList.remove('done');
+  }
+  const sess = await fetch('/api/session-status').then(r=>r.json()).catch(()=>({telegram:false}));
+  const step3 = document.getElementById('tg-step-3');
+  const step4 = document.getElementById('tg-step-4');
+  const sessStatus = document.getElementById('tg-session-status');
+  if (sess.telegram) {
+    step3.classList.add('done'); step4.classList.add('done'); step4.classList.add('active');
+    sessStatus.style.color = 'var(--green)';
+    sessStatus.textContent = '✓ Telegram session is saved and active';
+  } else {
+    step3.classList.add('active');
+    sessStatus.style.color = 'var(--muted)';
+    sessStatus.textContent = 'No session yet — complete step 3';
+  }
+}
+async function tgEnsureTunnel() {
+  const tgStatus = document.getElementById('tg-tunnel-status');
+  tgStatus.textContent = 'Starting tunnel…'; tgStatus.style.color = 'var(--gold)';
+  await fetch('/api/tunnel/start', { method: 'POST' });
+  setTimeout(updateTgModal, 2500);
+}
+function tgOpenViaProxy() {
+  const url = document.getElementById('tg-url-display').textContent;
+  if (!url || url.includes('—')) { alert('Start the tunnel first (Step 1)'); return; }
+  openExternal('https://web.telegram.org/k/');
+  logEvent('info', 'Telegram Web opened — log in to save session');
+}
+
+// ── CLAUDE CLI STATUS ─────────────────────────────────────────────────────────
+async function refreshClaudeStatus() {
+  const bridge = await fetch('/api/claude/bridge-status').then(r=>r.json()).catch(()=>({connected:false}));
+  const btn = document.getElementById('bridge-toggle-btn');
+  if (btn) btn.textContent = bridge.connected ? 'Stop Bridge' : 'Bridge Offline';
+  const data = bridge.connected ? { online: true, hasKey: true, model: bridge.model || 'claude-sonnet-4-6', source: 'VPS Bridge' }
+    : await fetch('/api/claude/status').then(r=>r.json()).catch(()=>({online:false}));
+  const dot = document.getElementById('claude-dot');
+  const dotBar = document.getElementById('claude-status-dot');
+  const label = document.getElementById('claude-status-label');
+  const text = document.getElementById('claude-status-text');
+  if (data.online) {
+    [dot, dotBar].forEach(d => { if(d){d.className='online'; d.style.background='var(--green)'; d.style.boxShadow='0 0 6px var(--green)'; }});
+    if(label) label.style.color = 'var(--green)';
+    if(label) label.textContent = 'Claude CLI: online';
+    if(text) text.textContent = `Claude online — ${data.source||'local'} | model: ${data.model||'claude'} | key: ${data.hasKey?'✓':'✗'}`;
+    if(text) text.style.color = 'var(--green)';
+  } else {
+    [dot, dotBar].forEach(d => { if(d){d.style.background='var(--muted)'; d.style.boxShadow='none'; }});
+    if(label) label.style.color = 'var(--muted)';
+    if(label) label.textContent = 'Claude CLI: offline';
+    if(text) { text.textContent = data.hasKey ? 'API key saved — ready to chat' : 'Add your Anthropic API key above to enable chat'; text.style.color='var(--muted)'; }
+  }
+  if (document.getElementById('api-key-input') && data.hasKey) {
+    document.getElementById('api-key-input').placeholder = 'API key saved ✓ (enter new to replace)';
+  }
+}
+
+// ── CLAUDE BRIDGE ────────────────────────────────────────────────────────────
+async function saveBridge() {
+  const vpsUrl = document.getElementById('vps-url-input').value.trim();
+  const token = document.getElementById('vps-token-input').value.trim();
+  if (!vpsUrl) return;
+  await fetch('/api/claude/set-bridge', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ vpsUrl, token })
+  });
+  logEvent('info', 'VPS bridge saved: ' + vpsUrl);
+  document.getElementById('vps-url-input').value = '';
+  document.getElementById('vps-token-input').value = '';
+  refreshClaudeStatus();
+}
+async function toggleBridge() {
+  const btn = document.getElementById('bridge-toggle-btn');
+  btn.textContent = '…';
+  const data = await fetch('/api/claude/bridge-status').then(r=>r.json()).catch(()=>({connected:false}));
+  if (data.connected) {
+    await fetch('/api/claude/bridge-toggle', { method: 'POST' });
+    logEvent('info', 'Bridge stop signal sent — pm2 will restart it automatically unless you run pm2 stop claude-bridge on VPS');
+    btn.textContent = 'Stopped';
+  } else {
+    logEvent('info', 'Bridge is offline. Start it on VPS: pm2 start claude-bridge');
+    btn.textContent = 'Offline';
+  }
+  setTimeout(refreshClaudeStatus, 3000);
+}
+
+// ── CLAUDE CHAT ───────────────────────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  fetch('/api/claude/set-key', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key}) })
+    .then(()=>{ logEvent('info','API key saved'); document.getElementById('api-key-input').value=''; refreshClaudeStatus(); });
+}
+function appendChat(role, text) {
+  const el = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  appendChat('user', msg);
+  appendChat('claude', '…thinking…');
+  const msgs = document.querySelectorAll('#chat-messages .chat-msg');
+  const thinking = msgs[msgs.length - 1];
+  try {
+    const res = await fetch('/api/claude/chat', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, context: { tunnelUrl: document.getElementById('tunnel-url').textContent, currentUrl } })
+    });
+    const data = await res.json();
+    if (data.error) { thinking.className = 'chat-msg error'; thinking.textContent = 'Error: ' + data.error; }
+    else { thinking.className = 'chat-msg claude'; thinking.textContent = data.reply; }
+  } catch(err) {
+    thinking.className = 'chat-msg error'; thinking.textContent = 'Network error: ' + err.message;
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const ci = document.getElementById('chat-input');
+  if (ci) ci.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }});
+});
+
+// ── TUNNEL ────────────────────────────────────────────────────────────────────
+async function refreshTunnel() {
+  const data = await fetch('/api/tunnel').then(r=>r.json()).catch(()=>({active:false,url:null}));
+  const urlEl = document.getElementById('tunnel-url');
+  const dot = document.getElementById('tunnel-dot');
+  const btn = document.getElementById('tunnel-toggle');
+  if (data.active && data.url) {
+    urlEl.textContent = data.url;
+    urlEl.style.color = 'var(--green)';
+    dot.style.background = 'var(--green)';
+    dot.style.boxShadow = '0 0 6px var(--green)';
+    btn.textContent = 'Stop';
+  } else {
+    urlEl.textContent = 'offline';
+    urlEl.style.color = 'var(--muted)';
+    dot.style.background = 'var(--muted)';
+    dot.style.boxShadow = 'none';
+    btn.textContent = 'Start';
+  }
+}
+async function toggleTunnel() {
+  const data = await fetch('/api/tunnel').then(r=>r.json()).catch(()=>({active:false}));
+  const endpoint = data.active ? '/api/tunnel/stop' : '/api/tunnel/start';
+  document.getElementById('tunnel-url').textContent = 'working...';
+  await fetch(endpoint, { method: 'POST' });
+  setTimeout(refreshTunnel, 2000);
+}
+function copyTunnelUrl() {
+  const url = document.getElementById('tunnel-url').textContent;
+  if (url && url !== 'offline' && url !== 'starting...' && url !== 'working...') {
+    navigator.clipboard.writeText(url).then(() => logEvent('info', 'Tunnel URL copied: ' + url));
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 refreshSessionStatus();
+refreshTunnel();
+refreshClaudeStatus();
 setInterval(refreshSessionStatus, 15000);
+setInterval(refreshTunnel, 10000);
+setInterval(refreshClaudeStatus, 20000);
 fetch('/api/scanner').then(r=>r.json()).then(d=>{ scannerOn=d.active; updateScannerUI(); }).catch(()=>{});
 </script>
 </body>

@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const fetch = require('node-fetch');
+const localtunnel = require('localtunnel');
 const { CookieJar } = require('tough-cookie');
 const fetchCookie = require('fetch-cookie');
 
@@ -58,6 +59,33 @@ function saveRedirectLog() {
 loadSessions();
 loadNetworkLog();
 loadRedirectLog();
+
+// ─── tunnel state ─────────────────────────────────────────────────────────────
+let tunnel = null;
+let tunnelUrl = null;
+
+async function startTunnel() {
+  try {
+    if (tunnel) { tunnel.close(); tunnel = null; tunnelUrl = null; }
+    tunnel = await localtunnel({ port: PORT, subdomain: 'gcz-weblab' });
+    tunnelUrl = tunnel.url;
+    console.log(`\n🌐 Tunnel: ${tunnelUrl}`);
+    console.log(`   Register with @BotFather: /setdomain → ${tunnelUrl}\n`);
+    tunnel.on('error', () => { tunnel = null; tunnelUrl = null; });
+    tunnel.on('close', () => { tunnel = null; tunnelUrl = null; });
+  } catch (err) {
+    // subdomain taken — get random one
+    try {
+      tunnel = await localtunnel({ port: PORT });
+      tunnelUrl = tunnel.url;
+      console.log(`\n🌐 Tunnel: ${tunnelUrl}\n`);
+      tunnel.on('error', () => { tunnel = null; tunnelUrl = null; });
+      tunnel.on('close', () => { tunnel = null; tunnelUrl = null; });
+    } catch (e) {
+      console.log('⚠ Tunnel failed:', e.message);
+    }
+  }
+}
 
 // ─── cookie jar helpers ───────────────────────────────────────────────────────
 function getCookieHeader(domain) {
@@ -169,6 +197,9 @@ app.get('/proxy', async (req, res) => {
         .replace(/<head>/i, `<head><base href="${targetUrl.origin}/">`);
     }
 
+    // strip headers that block embedding
+    res.removeHeader('X-Frame-Options');
+    res.removeHeader('Content-Security-Policy');
     res.set('Content-Type', contentType);
     res.set('X-Final-Url', currentUrl);
     res.set('X-Redirect-Count', String(chain.length - 1));
@@ -180,6 +211,17 @@ app.get('/proxy', async (req, res) => {
     if (scannerActive) { networkLog.unshift(entry); saveNetworkLog(); }
     res.status(502).json({ error: err.message, entry });
   }
+});
+
+// ─── API: tunnel ─────────────────────────────────────────────────────────────
+app.get('/api/tunnel', (req, res) => res.json({ active: !!tunnel, url: tunnelUrl }));
+app.post('/api/tunnel/start', async (req, res) => {
+  await startTunnel();
+  res.json({ active: !!tunnel, url: tunnelUrl });
+});
+app.post('/api/tunnel/stop', (req, res) => {
+  if (tunnel) { tunnel.close(); tunnel = null; tunnelUrl = null; }
+  res.json({ active: false, url: null });
 });
 
 // ─── API: scanner toggle ───────────────────────────────────────────────────────
@@ -362,6 +404,126 @@ app.get('/api/iframe-check', async (req, res) => {
   }
 });
 
+// ─── Claude config ────────────────────────────────────────────────────────────
+const CLAUDE_CONFIG_FILE = path.join(DATA_DIR, 'claude-config.json');
+function loadClaudeConfig() {
+  try { return JSON.parse(fs.readFileSync(CLAUDE_CONFIG_FILE, 'utf8')); }
+  catch { return {}; }
+}
+function saveClaudeConfig(cfg) { fs.writeFileSync(CLAUDE_CONFIG_FILE, JSON.stringify(cfg, null, 2)); }
+
+// ─── API: Claude status ────────────────────────────────────────────────────────
+app.get('/api/claude/status', (req, res) => {
+  const cfg = loadClaudeConfig();
+  const hasKey = !!(cfg.apiKey || process.env.ANTHROPIC_API_KEY);
+  res.json({ online: hasKey, hasKey, model: 'claude-sonnet-4-6' });
+});
+
+// ─── API: save Claude API key / VPS bridge config ────────────────────────────
+app.post('/api/claude/set-key', (req, res) => {
+  const { key } = req.body;
+  if (!key || !key.startsWith('sk-')) return res.status(400).json({ error: 'Invalid key format' });
+  const cfg = loadClaudeConfig();
+  cfg.apiKey = key;
+  saveClaudeConfig(cfg);
+  res.json({ saved: true });
+});
+app.post('/api/claude/set-bridge', (req, res) => {
+  const { vpsUrl, token } = req.body;
+  if (!vpsUrl) return res.status(400).json({ error: 'vpsUrl required' });
+  const cfg = loadClaudeConfig();
+  cfg.vpsUrl = vpsUrl.replace(/\/$/, '');
+  cfg.bridgeToken = token || '';
+  saveClaudeConfig(cfg);
+  res.json({ saved: true });
+});
+app.get('/api/claude/bridge-status', async (req, res) => {
+  const cfg = loadClaudeConfig();
+  if (!cfg.vpsUrl) return res.json({ connected: false, reason: 'No VPS bridge configured' });
+  try {
+    const r = await fetch(`${cfg.vpsUrl}/status`, { signal: AbortSignal.timeout(5000) });
+    const data = await r.json();
+    res.json({ connected: true, ...data });
+  } catch (err) {
+    res.json({ connected: false, reason: err.message });
+  }
+});
+app.post('/api/claude/bridge-toggle', async (req, res) => {
+  const cfg = loadClaudeConfig();
+  if (!cfg.vpsUrl) return res.status(400).json({ error: 'No VPS bridge configured' });
+  try {
+    const r = await fetch(`${cfg.vpsUrl}/stop`, {
+      method: 'POST',
+      headers: { 'x-bridge-token': cfg.bridgeToken || '' },
+    });
+    res.json(await r.json());
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
+// ─── API: Claude chat ─────────────────────────────────────────────────────────
+app.post('/api/claude/chat', async (req, res) => {
+  const { message, context } = req.body;
+  if (!message) return res.status(400).json({ error: 'message required' });
+  const cfg = loadClaudeConfig();
+  const apiKey = cfg.apiKey || process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(401).json({ error: 'No Anthropic API key set. Add it in the Chat panel.' });
+
+  const sessionSummary = Object.keys(cookieStore).map(d => `${d} (${cookieStore[d].length} cookies)`).join(', ') || 'none';
+  const systemPrompt = `You are Claude, embedded in the GambleCodez Web Lab — a private developer testing tool running on Android Termux at localhost:3000.
+
+Current context:
+- Tunnel URL: ${context?.tunnelUrl || 'none'}
+- Current loaded site: ${context?.currentUrl || 'none'}
+- Saved sessions: ${sessionSummary}
+- You can call the local API at http://127.0.0.1:3000/api/test/request to make authenticated requests using stored cookies.
+
+You help the developer test websites, Discord bots, Telegram bots, daily reward flows, redirect chains, and OAuth sessions. Be concise and technical. If asked to test an endpoint, provide the exact curl command or API call.`;
+
+  // prefer VPS bridge if configured
+  const vpsUrl = cfg.vpsUrl;
+  const bridgeToken = cfg.bridgeToken;
+  if (vpsUrl) {
+    try {
+      const r = await fetch(`${vpsUrl}/chat`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-bridge-token': bridgeToken || '' },
+        body: JSON.stringify({ message, context, history: [] }),
+        signal: AbortSignal.timeout(30000),
+      });
+      const data = await r.json();
+      return res.json(data);
+    } catch (err) {
+      // fall through to local API key
+    }
+  }
+
+  if (!apiKey) return res.status(401).json({ error: 'No API key or VPS bridge configured.' });
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: message }],
+      }),
+    });
+    const data = await response.json();
+    if (data.error) return res.status(502).json({ error: data.error.message });
+    const reply = data.content?.[0]?.text || 'No response';
+    res.json({ reply });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // ─── PNG icon generator (pure Node, no deps) ─────────────────────────────────
 function makePng(size) {
   // Creates a minimal valid PNG: solid dark square with gold "G" text simulation
@@ -437,13 +599,13 @@ app.get('/icons/icon-:size.png', (req, res) => {
 // ─── start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log('\n╔══════════════════════════════════════════════╗');
-  console.log('║     GambleCodez // Web Lab  v1.0             ║');
+  console.log('║     GambleCodez // Web Lab  v2.0             ║');
   console.log('╠══════════════════════════════════════════════╣');
   console.log(`║  Local:   http://127.0.0.1:${PORT}              ║`);
-  console.log(`║  Network: http://0.0.0.0:${PORT}                ║`);
   console.log('╠══════════════════════════════════════════════╣');
   console.log('║  1. Open Chrome → http://127.0.0.1:3000      ║');
   console.log('║  2. Tap ⋮ → "Add to Home screen"             ║');
-  console.log('║  3. Launch from Home Screen as a web app     ║');
+  console.log('║  Starting public tunnel...                   ║');
   console.log('╚══════════════════════════════════════════════╝\n');
+  startTunnel();
 });

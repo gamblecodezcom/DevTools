@@ -15,6 +15,7 @@
     "fetch-cookie": "^3.0.0",
     "cors": "^2.8.5",
     "body-parser": "^1.20.2",
-    "express-session": "^1.17.3"
+    "express-session": "^1.17.3",
+    "localtunnel": "^2.0.2"
   }
 }
