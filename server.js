@@ -14,7 +14,7 @@ const { CookieJar } = require('tough-cookie');
 const fetchCookie = require('fetch-cookie');
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const DATA_DIR = path.join(__dirname, 'data');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const SAVED_TESTS_FILE = path.join(DATA_DIR, 'saved-tests.json');
@@ -65,6 +65,7 @@ let tunnel = null;
 let tunnelUrl = null;
 
 async function startTunnel() {
+  if (process.env.SKIP_TUNNEL === '1') { console.log('⏭ Tunnel skipped (SKIP_TUNNEL=1 — VPS mode)'); return; }
   try {
     if (tunnel) { tunnel.close(); tunnel = null; tunnelUrl = null; }
     tunnel = await localtunnel({ port: PORT, subdomain: 'gcz-weblab' });
@@ -471,13 +472,14 @@ app.post('/api/claude/chat', async (req, res) => {
   if (!apiKey) return res.status(401).json({ error: 'No Anthropic API key set. Add it in the Chat panel.' });
 
   const sessionSummary = Object.keys(cookieStore).map(d => `${d} (${cookieStore[d].length} cookies)`).join(', ') || 'none';
-  const systemPrompt = `You are Claude, embedded in the GambleCodez Web Lab — a private developer testing tool running on Android Termux at localhost:3000.
+  const selfUrl = process.env.SKIP_TUNNEL === '1' ? 'https://bot.gamblecodez.com/dev' : `http://127.0.0.1:${PORT}`;
+  const systemPrompt = `You are Claude, embedded in the GambleCodez Web Lab — a private developer testing tool at ${selfUrl}.
 
 Current context:
 - Tunnel URL: ${context?.tunnelUrl || 'none'}
 - Current loaded site: ${context?.currentUrl || 'none'}
 - Saved sessions: ${sessionSummary}
-- You can call the local API at http://127.0.0.1:3000/api/test/request to make authenticated requests using stored cookies.
+- You can call the local API at http://127.0.0.1:${PORT}/api/test/request to make authenticated requests using stored cookies.
 
 You help the developer test websites, Discord bots, Telegram bots, daily reward flows, redirect chains, and OAuth sessions. Be concise and technical. If asked to test an endpoint, provide the exact curl command or API call.`;
 
