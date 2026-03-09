@@ -7,6 +7,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const fetch = require('node-fetch');
 const { CookieJar } = require('tough-cookie');
 const fetchCookie = require('fetch-cookie');
@@ -359,6 +360,78 @@ app.get('/api/iframe-check', async (req, res) => {
   } catch (err) {
     res.json({ blocked: true, error: err.message });
   }
+});
+
+// ─── PNG icon generator (pure Node, no deps) ─────────────────────────────────
+function makePng(size) {
+  // Creates a minimal valid PNG: solid dark square with gold "G" text simulation
+  // Pure pixel approach — gold (#ffd700) text on dark (#0a0a0f) background
+  const w = size, h = size;
+  const raw = Buffer.alloc(h * (1 + w * 3));
+  for (let y = 0; y < h; y++) {
+    raw[y * (1 + w * 3)] = 0; // filter byte
+    for (let x = 0; x < w; x++) {
+      const i = y * (1 + w * 3) + 1 + x * 3;
+      const cx = x / w, cy = y / h;
+      // background gradient: dark blue-black
+      let r = 10, g = 10, b = 15;
+      // gold border ring
+      const edge = 0.06;
+      if (cx < edge || cx > 1-edge || cy < edge || cy > 1-edge) {
+        r = 255; g = 215; b = 0;
+      }
+      // cyan accent bar at bottom third
+      if (cy > 0.65 && cy < 0.68 && cx > 0.1 && cx < 0.9) {
+        r = 0; g = 229; b = 255;
+      }
+      // "G" shape in gold — center region
+      const gx = (cx - 0.5) * 2, gy = (cy - 0.45) * 2;
+      const dist = Math.sqrt(gx*gx + gy*gy);
+      if (dist < 0.7 && dist > 0.5 && !(gx > 0 && gy > -0.1 && gy < 0.3)) {
+        r = 255; g = 215; b = 0;
+      }
+      if (gx > 0 && gx < 0.7 && gy > -0.05 && gy < 0.15) {
+        r = 255; g = 215; b = 0;
+      }
+      raw[i] = r; raw[i+1] = g; raw[i+2] = b;
+    }
+  }
+  const compressed = zlib.deflateSync(raw);
+  function crc32(buf) {
+    let c = 0xFFFFFFFF;
+    for (const b of buf) { c = (c >>> 8) ^ CRC_TABLE[(c ^ b) & 0xFF]; }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })();
+  function chunk(type, data) {
+    const typeBuf = Buffer.from(type);
+    const lenBuf = Buffer.allocUnsafe(4); lenBuf.writeUInt32BE(data.length);
+    const crcBuf = Buffer.allocUnsafe(4);
+    crcBuf.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])));
+    return Buffer.concat([lenBuf, typeBuf, data, crcBuf]);
+  }
+  const sig = Buffer.from([137,80,78,71,13,10,26,10]);
+  const ihdr = Buffer.allocUnsafe(13);
+  ihdr.writeUInt32BE(w,0); ihdr.writeUInt32BE(h,4);
+  ihdr[8]=8; ihdr[9]=2; ihdr[10]=0; ihdr[11]=0; ihdr[12]=0;
+  return Buffer.concat([sig, chunk('IHDR',ihdr), chunk('IDAT',compressed), chunk('IEND',Buffer.alloc(0))]);
+}
+
+// serve generated icons
+app.get('/icons/icon-:size.png', (req, res) => {
+  const size = parseInt(req.params.size) || 192;
+  const safe = Math.min(Math.max(size, 16), 512);
+  res.set('Content-Type', 'image/png');
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.send(makePng(safe));
 });
 
 // ─── start ────────────────────────────────────────────────────────────────────
