@@ -37,6 +37,19 @@ const SHARE_TOKENS_FILE  = path.join(DATA_DIR, 'share-tokens.json');
 const ADMIN_CONFIG_FILE  = path.join(DATA_DIR, 'admin-config.json');
 const CHAT_HISTORY_FILE  = path.join(DATA_DIR, 'chat-history.json');
 const TG_AUTH_FILE       = path.join(DATA_DIR, 'tg-auth.json');
+const AUDIT_LOG_FILE     = path.join(DATA_DIR, 'audit.log');
+const CLAUDE_LOG_FILE    = path.join(DATA_DIR, 'claude.log');
+
+// ─── Audit logger ─────────────────────────────────────────────────────────────
+function audit(action, detail = {}) {
+  const line = JSON.stringify({ ts: new Date().toISOString(), action, ...detail }) + '\n';
+  fs.appendFile(AUDIT_LOG_FILE, line, () => {});
+  console.log(`[AUDIT] ${action}`, Object.keys(detail).length ? JSON.stringify(detail) : '');
+}
+function claudeLog(dir, content, meta = {}) {
+  const line = JSON.stringify({ ts: new Date().toISOString(), dir, content: content.slice(0, 2000), ...meta }) + '\n';
+  fs.appendFile(CLAUDE_LOG_FILE, line, () => {});
+}
 
 // ─── Claude CLI detection ─────────────────────────────────────────────────────
 const CLAUDE_CANDIDATES = [
@@ -253,11 +266,13 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('${BASE}/sw.j
 app.get('/auth', (req, res) => {
   const cfg = loadAdminConfig();
   const { token, redirect: redir } = req.query;
+  const ip = req.ip || req.connection?.remoteAddress;
   if (token === cfg.adminToken) {
     req.session.admin = true;
-    // Use absolute URL so redirect works correctly behind the /dev/ nginx prefix
+    audit('auth.login', { ip, redirect: redir || '/' });
     return res.redirect(redir || (BASE + '/'));
   }
+  audit('auth.fail', { ip, tokenProvided: !!token });
   res.status(403).send(adminLoginPage(redir || (BASE + '/')));
 });
 
@@ -361,7 +376,11 @@ app.get('/share-proxy', async (req, res) => {
   if (!tokenId || !target) return res.status(400).send('Missing parameters');
 
   const t = shareTokens[tokenId];
-  if (!isTokenValid(t)) return res.status(403).send('Link expired or invalid');
+  if (!isTokenValid(t)) {
+    audit('share.use_denied', { id: tokenId, ip: req.ip, target });
+    return res.status(403).send('Link expired or invalid');
+  }
+  audit('share.use', { id: tokenId, label: t.label, domain: t.domain, ip: req.ip, target });
 
   let targetUrl;
   try { targetUrl = new URL(target.startsWith('http') ? target : 'https://' + target); }
@@ -427,6 +446,29 @@ app.delete('/api/network', (req, res) => { networkLog = []; saveNetworkLog(); re
 app.get('/api/redirects', (req, res) => res.json(redirectLog.slice(0, 100)));
 app.delete('/api/redirects', (req, res) => { redirectLog = []; saveRedirectLog(); res.json({ cleared: true }); });
 
+// ─── API: audit log ───────────────────────────────────────────────────────────
+app.get('/api/audit', (req, res) => {
+  const n = parseInt(req.query.n || '200');
+  try {
+    const raw = fs.readFileSync(AUDIT_LOG_FILE, 'utf8');
+    const lines = raw.trim().split('\n').filter(Boolean).slice(-n).map(l => { try { return JSON.parse(l); } catch { return { raw: l }; } });
+    res.json(lines.reverse());
+  } catch { res.json([]); }
+});
+app.get('/api/claude-log', (req, res) => {
+  const n = parseInt(req.query.n || '100');
+  try {
+    const raw = fs.readFileSync(CLAUDE_LOG_FILE, 'utf8');
+    const lines = raw.trim().split('\n').filter(Boolean).slice(-n).map(l => { try { return JSON.parse(l); } catch { return { raw: l }; } });
+    res.json(lines.reverse());
+  } catch { res.json([]); }
+});
+app.delete('/api/audit', (req, res) => {
+  fs.writeFileSync(AUDIT_LOG_FILE, '');
+  fs.writeFileSync(CLAUDE_LOG_FILE, '');
+  res.json({ cleared: true });
+});
+
 // ─── API: sessions / cookies ──────────────────────────────────────────────────
 app.get('/api/sessions', (req, res) => {
   const summary = {};
@@ -441,10 +483,17 @@ app.post('/api/sessions/:domain', (req, res) => {
   if (!Array.isArray(cookies)) return res.status(400).json({ error: 'cookies must be array' });
   cookieStore[domain] = cookies;
   saveSessions();
+  audit('session.save', { domain, count: cookies.length });
   res.json({ saved: true, domain, count: cookies.length });
 });
-app.delete('/api/sessions/:domain', (req, res) => { delete cookieStore[req.params.domain]; saveSessions(); res.json({ cleared: true }); });
-app.delete('/api/sessions', (req, res) => { cookieStore = {}; saveSessions(); res.json({ cleared: true }); });
+app.delete('/api/sessions/:domain', (req, res) => {
+  audit('session.clear', { domain: req.params.domain });
+  delete cookieStore[req.params.domain]; saveSessions(); res.json({ cleared: true });
+});
+app.delete('/api/sessions', (req, res) => {
+  audit('session.clear_all', {});
+  cookieStore = {}; saveSessions(); res.json({ cleared: true });
+});
 
 // ─── API: session status ──────────────────────────────────────────────────────
 app.get('/api/session-status', (req, res) => {
@@ -493,10 +542,13 @@ app.post('/api/share/create', (req, res) => {
   };
   shareTokens[id] = token;
   saveShareTokens();
+  audit('share.create', { id, domain, targetUrl, label: token.label, ttlMinutes, maxUses });
   res.json({ id, link: `${BASE}/${id}`, token });
 });
 
 app.delete('/api/share/:id', (req, res) => {
+  const t = shareTokens[req.params.id];
+  audit('share.delete', { id: req.params.id, label: t?.label });
   delete shareTokens[req.params.id];
   saveShareTokens();
   res.json({ deleted: true });
@@ -660,10 +712,12 @@ app.get('/api/claude/status', (req, res) => {
 // ─── API: Claude activate / deactivate ────────────────────────────────────────
 app.post('/api/claude/activate', (req, res) => {
   claudeActive = true;
+  audit('claude.activate', { cliBin: CLI_BIN || null });
   res.json({ active: true, online: !!CLI_BIN || !!(loadClaudeConfig().apiKey || process.env.ANTHROPIC_API_KEY) });
 });
 app.post('/api/claude/deactivate', (req, res) => {
   claudeActive = false;
+  audit('claude.deactivate', {});
   res.json({ active: false });
 });
 
@@ -738,6 +792,7 @@ Be concise, technical, and direct. You maintain conversation memory.`;
     }
   } catch (cliErr) {
     // CLI failed — try API key fallback
+    audit('claude.cli_error', { error: cliErr.message });
     const cfg    = loadClaudeConfig();
     const hasKey = !!(cfg.apiKey || process.env.ANTHROPIC_API_KEY);
     if (hasKey) {
@@ -745,6 +800,7 @@ Be concise, technical, and direct. You maintain conversation memory.`;
         reply    = await callViaApiKey(systemPrompt, apiMessages);
         authUsed = 'api-key-fallback';
       } catch (apiErr) {
+        audit('claude.api_error', { error: apiErr.message });
         return res.status(502).json({ error: apiErr.message });
       }
     } else {
@@ -756,6 +812,10 @@ Be concise, technical, and direct. You maintain conversation memory.`;
   chatHistory.push({ role: 'user',      content: message.trim(), ts });
   chatHistory.push({ role: 'assistant', content: reply,          ts });
   saveChatHistory();
+
+  claudeLog('user',      message.trim(), { authMode: authUsed });
+  claudeLog('assistant', reply,          { authMode: authUsed, historyCount: chatHistory.length });
+  audit('claude.chat', { authMode: authUsed, msgLen: message.length, replyLen: reply.length, historyCount: chatHistory.length });
 
   res.json({ reply, authMode: authUsed, historyCount: chatHistory.length });
 });
@@ -855,6 +915,7 @@ app.get('/tg-auth', (req, res) => {
 
   tgAuthData = { id, first_name, last_name, username, photo_url, auth_date, hash, savedAt: new Date().toISOString() };
   saveTgAuth();
+  audit('tg.login', { id, username: username || null, first_name });
 
   res.send(`<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">

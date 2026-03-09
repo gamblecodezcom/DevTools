@@ -52,3 +52,13 @@ if [ -f "$DATA/chat-history.json" ]; then
     } catch(e){}
   " 2>/dev/null
 fi
+
+# Trim audit.log and claude.log to last 1000 lines each
+for logfile in "$DATA/audit.log" "$DATA/claude.log"; do
+  if [ -f "$logfile" ]; then
+    lines=$(wc -l < "$logfile" 2>/dev/null || echo 0)
+    if [ "$lines" -gt 1000 ]; then
+      tail -1000 "$logfile" > "$logfile.tmp" && mv "$logfile.tmp" "$logfile"
+    fi
+  fi
+done
