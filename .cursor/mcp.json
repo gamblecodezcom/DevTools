@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "gcz": {
+      "url": "https://ai.gamblecodez.com/mcp",
+      "headers": {
+        "Authorization": "Bearer gcz-mcp-2026"
+      }
+    }
+  }
+}

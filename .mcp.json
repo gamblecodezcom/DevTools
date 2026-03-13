@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "gcz": {
+      "url": "http://localhost:7331/mcp"
+    }
+  }
+}
