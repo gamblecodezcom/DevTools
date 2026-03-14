@@ -4,6 +4,14 @@
 **External**: `https://ai.gamblecodez.com/mcp` | Token: `gcz-mcp-2026`
 **Localhost**: `http://localhost:7331/mcp` (no token)
 
+## Bootstrap Policy (Required)
+
+- Before any task, call `gcz.bootstrap({ project: "DevTools", client: "<agent name>" })`.
+- CLI shells auto-run `/var/www/html/gcz/ai/mcp/bootstrap.sh` unless `GCZ_BOOTSTRAP_DISABLE=1`.
+- Web coders must call `gcz.bootstrap` manually at session start.
+- At end of session, persist a summary with `unified.memory.set({ project: "DevTools", source: "<agent name>", key: "last_session_summary", value: {...} })`.
+- If shared context changed, call `unified.context.write({ ... })`.
+
 ## Quick Connect
 
 ### Claude Code CLI (on VPS)
