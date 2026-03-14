@@ -1,0 +1,1 @@
+/var/www/html/gcz/ai/mcp/bootstrap.sh
